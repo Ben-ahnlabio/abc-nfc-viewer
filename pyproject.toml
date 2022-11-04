@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "anv"
+version = "0.1.0"
+description = ""
+authors = ["Ben <ben@ahnlab.io>"]
+readme = "README.md"
+packages = [{include = "anv"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.28.1"
+python-dotenv = "^0.21.0"
+web3 = "^5.31.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+pylint = "^2.15.5"
+mypy = "^0.982"
+flake8 = "^5.0.4"
+black = "^22.10.0"
+types-requests = "^2.28.11.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
