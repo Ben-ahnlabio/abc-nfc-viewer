@@ -39,3 +39,11 @@ def test_get_transfer_history_by_owner(kas_api: kas.KasApi):
     assert result
     with open("get_transfer_history_by_account.json", "w") as f:
         f.write(json.dumps(result))
+
+
+def test_get_nft_list(kas_api: kas.KasApi):
+    contract_address = "0x590744cb8cf1a698d7db509b52bf209e3cccb8e0"
+    result = kas_api.get_nft_list(kas.ChainId.Cypress, contract_address)
+    assert result
+    with open("kas_nft_list_by_contract_addr.json", "w") as f:
+        f.write(json.dumps(result))

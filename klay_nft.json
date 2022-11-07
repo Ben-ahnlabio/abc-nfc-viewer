@@ -1,0 +1,13 @@
+{
+  "name": "Animals Punks #8965",
+  "image": "https://gateway.pinata.cloud/ipfs/QmSAhiTtseDw2GPL1HYHkRi4kUozh7cYgAr7MSZiXS5A5n/8965.png",
+  "attributes": [
+    { "trait_type": "background", "value": "green" },
+    { "trait_type": "species", "value": "tiger" },
+    { "trait_type": "eyes", "value": "star" },
+    { "trait_type": "mouth", "value": "lollipop" },
+    { "trait_type": "clothes", "value": "warrior" },
+    { "trait_type": "head", "value": "ribbon" },
+    { "trait_type": "accessory", "value": "scouter purple" }
+  ]
+}

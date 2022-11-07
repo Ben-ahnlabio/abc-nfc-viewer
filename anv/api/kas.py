@@ -97,7 +97,7 @@ class KasApi:
         r.raise_for_status()
         return r.json()
 
-    def get_nft_info(
+    def get_nft_list(
         self,
         chain_id: ChainId,
         nfs_contract: str,

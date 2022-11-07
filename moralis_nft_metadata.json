@@ -1,0 +1,18 @@
+{
+  "token_address": "0x25dc4d9e2598c21dc020aa7b741377ecde971c2f",
+  "token_id": "723",
+  "transfer_index": [18150386, 87, 379, 0],
+  "owner_of": "0xe0a9e5b59701a776575fdd6257c3f89ae362629a",
+  "block_number": "18150386",
+  "block_number_minted": "18150386",
+  "token_hash": "82045660a70e0ca2a72a1f941255d2ae",
+  "amount": "1",
+  "contract_type": "ERC721",
+  "name": "Rh!noX",
+  "symbol": "RNX",
+  "token_uri": "https://ipfs.moralis.io:2053/ipfs/QmQN8M7ZLxcUQ7QKgQquBregDNyCMoTQu243FpbyCftLq3/723.json",
+  "metadata": "{\"name\":\"Rh!noX #723\",\"description\":\"Rh!noX,Soulbound certification for BNB Chain and Gamefi\",\"image\":\"ipfs://QmWe1rLbGLbEavFD5wzuumc7g1xmZgrMencrXgzb3kkz4B/723.png\",\"dna\":\"30eb0aa0252fe7ee1fa4fc88e90b752f30558d02\",\"edition\":1,\"date\":1653413929124,\"attributes\":[{\"trait_type\":\"Background\",\"value\":\"Saffron yellow\"},{\"trait_type\":\"Fur\",\"value\":\"Gold\"},{\"trait_type\":\"Clothes\",\"value\":\"Heart shapedvest\"},{\"trait_type\":\"Eyes\",\"value\":\"Tedious eye\"},{\"trait_type\":\"Hat\",\"value\":\"Crab\"},{\"trait_type\":\"Earring\",\"value\":\"\"},{\"trait_type\":\"Mouth\",\"value\":\"Pizza\"},{\"trait_type\":\"Nose\",\"value\":\"\"}]}",
+  "last_token_uri_sync": "2022-08-07T18:26:29.820Z",
+  "last_metadata_sync": "2022-08-07T18:26:32.889Z",
+  "minter_address": "0x5b056a5b99b9cda755dad1ae9f3e6b0afb8ddfec"
+}

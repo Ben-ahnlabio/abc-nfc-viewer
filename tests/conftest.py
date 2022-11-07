@@ -2,7 +2,7 @@ import os
 import json
 import pathlib
 import tempfile
-from anv.api import alchemy, kas
+from anv.api import alchemy, kas, morails
 
 import pytest
 
@@ -42,6 +42,16 @@ def fake_kas_credential_env():
 @pytest.fixture
 def alchemy_api_key_env():
     os.environ["ALCHEMY_API_KEY"] = "O06KHzfPbklzwxDp8Z4KDrxIMmazK85c"
+    os.environ["ALCHEMY_ETHER_MAIN_API_KEY"] = "O06KHzfPbklzwxDp8Z4KDrxIMmazK85c"
+    os.environ["ALCHEMY_POLYGON_MAIN_API_KEY"] = "HCcxBsPAawcztXq5R7w3zRZb2VeX2ZGl"
+    os.environ["ALCHEMY_SOLANA_MAIN_API_KEY"] = "EE1vFxSrdfHZClzRQo1tWg_IuyHqf7xu"
+
+
+@pytest.fixture
+def moralis_api_key_env():
+    os.environ[
+        "MORALIS_API_KEY"
+    ] = "WR7xp7atOQ1XlFLywNisHfWUSLZT3EYnr13AiiLgVKOJCVlU1cxOFpqWrZorpSsF"
 
 
 @pytest.fixture
@@ -62,3 +72,8 @@ def kas_env():
 @pytest.fixture
 def kas_api(kas_env):
     yield kas.KasApi()
+
+
+@pytest.fixture
+def moralis_api(moralis_api_key_env):
+    yield morails.MorailsApi()

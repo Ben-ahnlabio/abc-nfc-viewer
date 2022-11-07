@@ -18,7 +18,7 @@ def test_alchemy_get_NFTs(alchemy_api: alchemy.AlchemyApi):
         "0x0232d1083E970F0c78f56202b9A666B526FA379F",
     )
     assert result
-    with open("result.json", "w") as f:
+    with open("alchemy_get_nfts_result.json", "w") as f:
         f.write(json.dumps(result))
 
 
@@ -30,5 +30,17 @@ def test_alchemy_get_NFT_metadata(alchemy_api: alchemy.AlchemyApi):
         token_id="0x0000000000000000000000000000000000000000000000000000000000000262",
     )
     assert result
-    with open("nft_metadata.json", "w") as f:
+    with open("alchemy_nft_metadata.json", "w") as f:
+        f.write(json.dumps(result))
+
+
+def test_alchemy_get_contract_metadata(alchemy_api: alchemy.AlchemyApi):
+    # hood daisy
+    contract_address = "0x2931b181ae9dc8f8109ec41c42480933f411ef94"
+    contract_address = "0x039b52db88ae51b86b7ab091fa710082ef60dd7b"
+    result = alchemy_api.get_contract_metadata(
+        alchemy.AlchemyNetwork.EthereumMainNet, contract_address
+    )
+    assert result
+    with open("alchemy_contract_metadata.json", "w") as f:
         f.write(json.dumps(result))

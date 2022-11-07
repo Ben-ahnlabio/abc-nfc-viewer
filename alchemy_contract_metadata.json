@@ -1,0 +1,17 @@
+{
+  "address": "0x039b52db88ae51b86b7ab091fa710082ef60dd7b",
+  "contractMetadata": {
+    "name": "To TowerOfFantasy Collection",
+    "symbol": "To TowerOfFantasy Collection",
+    "tokenType": "ERC721",
+    "openSea": {
+      "floorPrice": 0.59,
+      "collectionName": "To TowerOfFantasy Collection",
+      "safelistRequestStatus": "not_requested",
+      "imageUrl": "https://i.seadn.io/gcs/files/e6740ad8771f764fd4abd6e27bfc10cd.jpg?w=500&auto=format",
+      "description": "Free Minting - LIVE [Here](https://towerf.com) ! This is a collection of \"Tower Of Fantasy\" characters created on the Ethereum blockchain. [View More](https://towerf.com)",
+      "externalUrl": "https://towerf.com",
+      "lastIngestedAt": "2022-10-31T21:56:54.000Z"
+    }
+  }
+}

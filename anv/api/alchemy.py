@@ -11,13 +11,19 @@ import requests
 class AlchemyNetwork(enum.Enum):
     EthereumMainNet = "eth-mainnet"
     PolygonMainNet = "polygon-mainnet"
+    SolanaMainNet = "solana-mainnet"
 
 
 class AlchemyApi:
     def __init__(self):
-        self.api_key = os.getenv("ALCHEMY_API_KEY")
-        self.ether_main_api_key = os.getenv("ALCHEMY_API_KEY")
-        self.ether_main_api_key = os.getenv("ALCHEMY_API_KEY")
+        self.ether_main_api_key = os.getenv("ALCHEMY_ETHER_MAIN_API_KEY")
+        self.ploygon_main_api_key = os.getenv("ALCHEMY_POLYGON_MAIN_API_KEY")
+        self.solana_main_api_key = os.getenv("ALCHEMY_SOLANA_MAIN_API_KEY")
+        self.api_key = {
+            AlchemyNetwork.EthereumMainNet: self.ether_main_api_key,
+            AlchemyNetwork.PolygonMainNet: self.ploygon_main_api_key,
+            AlchemyNetwork.SolanaMainNet: self.solana_main_api_key,
+        }
 
     def get_NFTs(self, network: AlchemyNetwork, owner: str):
         """
@@ -29,7 +35,7 @@ class AlchemyApi:
 
         headers = {"accept": "application/json"}
         params = {"owner": owner, "withMetadata": "false"}
-        url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key}/getNFTs"
+        url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key[network]}/getNFTs"
         r = requests.get(url, params=params, headers=headers)
         r.raise_for_status()
         return r.json()
@@ -47,7 +53,23 @@ class AlchemyApi:
 
         headers = {"accept": "application/json"}
         params = {"contractAddress": contract_address, "tokenId": token_id}
-        url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key}/getNFTMetadata"
+        url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key[network]}/getNFTMetadata"
+        r = requests.get(url, params=params, headers=headers)
+        r.raise_for_status()
+        return r.json()
+
+    def get_contract_metadata(self, network: AlchemyNetwork, contract_address: str):
+        """
+        https://docs.alchemy.com/reference/getcontractmetadata
+
+        Args:
+            contract_address: contract address
+        """
+
+        headers = {"accept": "application/json"}
+        params = {"contractAddress": contract_address}
+        url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key[network]}/getContractMetadata"
+
         r = requests.get(url, params=params, headers=headers)
         r.raise_for_status()
         return r.json()

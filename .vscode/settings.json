@@ -1,31 +1,31 @@
 {
-    "python.analysis.autoSearchPaths": true,
-    "python.envFile": "${workspaceFolder}/.env",
-    "editor.formatOnSave": true,
-    "python.formatting.provider": "black",
-    "python.formatting.blackPath": "black",
-    "python.linting.enabled": true,
-    "python.linting.mypyEnabled": true,
-    "python.linting.mypyPath": "mypy",
-    "python.linting.mypyArgs": [
-      "--follow-imports=silent",
-      "--ignore-missing-imports",
-      "--show-column-numbers",
-      "--no-pretty"
-    ],
-    "python.linting.flake8Enabled": true,
-    "python.linting.flake8Path": "flake8",
-    "python.linting.flake8Args": ["--ignore=E501"],
-    "[jsonc]": {
-      "editor.quickSuggestions": {
-        "strings": true
-      },
-      "editor.suggest.insertMode": "replace",
-      "editor.formatOnSave": true,
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "python.analysis.autoSearchPaths": true,
+  "python.envFile": "${workspaceFolder}/.env",
+  "editor.formatOnSave": true,
+  "python.formatting.provider": "black",
+  "python.formatting.blackPath": "black",
+  "python.linting.enabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.linting.mypyPath": "mypy",
+  "python.linting.mypyArgs": [
+    "--follow-imports=silent",
+    "--ignore-missing-imports",
+    "--show-column-numbers",
+    "--no-pretty"
+  ],
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Path": "flake8",
+  "python.linting.flake8Args": ["--ignore=E501"],
+  "[jsonc]": {
+    "editor.quickSuggestions": {
+      "strings": true
     },
-    "python.testing.pytestArgs": ["tests"],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
-  }
-  
+    "editor.suggest.insertMode": "replace",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.analysis.autoImportCompletions": true
+}
