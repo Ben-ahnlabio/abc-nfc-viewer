@@ -2,7 +2,12 @@ import os
 import json
 import pathlib
 import tempfile
-from anv.api import alchemy, kas, morails
+from typing import Optional
+from anv import models
+from anv import api
+from anv.api import alchemy, kas, morails, nft
+from anv.repository import Respository, DiskRepository
+from anv.api.ipfs import IPFSGateway
 
 import pytest
 
@@ -77,3 +82,34 @@ def kas_api(kas_env):
 @pytest.fixture
 def moralis_api(moralis_api_key_env):
     yield morails.MorailsApi()
+
+
+@pytest.fixture
+def nft_api(alchemy_api):
+    class Repo(Respository):
+        def get_NFT_metadata(
+            self, network: models.Network, contract_address: str, token_id: str
+        ) -> Optional[models.NftMetadata]:
+            return None
+
+    yield nft.NftApi(Repo(), alchemy_api)
+
+
+@pytest.fixture
+def disk_repo():
+    yield DiskRepository()
+
+
+@pytest.fixture
+def ethereum_api(disk_repo, ipfs, alchemy_api):
+    yield api.EthereumApi(disk_repo, ipfs, alchemy_api)
+
+
+@pytest.fixture
+def klaytn_api(disk_repo, ipfs, kas_api):
+    yield api.KlaytnApi(disk_repo, ipfs, kas_api)
+
+
+@pytest.fixture
+def ipfs():
+    yield IPFSGateway()
