@@ -37,7 +37,7 @@ async def root():
 
 
 @app.get("/v1/nfts/{chain}", response_model=models.NftResponse)
-async def get_nft_by_owner(
+async def get_nft_by_owner_v1(
     chain: models.Chain,
     owner: str,
     page: int = 1,
@@ -58,6 +58,15 @@ async def get_nft_by_owner(
         data.url = repo.get_nft_cached_urls(data.image)
 
     return models.NftResponse(page=page, per_page=per_page, items=nft_metadata)
+
+
+@app.get("/v2/nfts/{chain}", response_model=models.NftResponse)
+async def get_nft_by_owner_v2(chain: models.Chain, owner: str, resync: bool = False):
+    nft_service = app_config.get_nft_service()
+    nft_metadata = nft_service.get_NFTs_by_owner(
+        chain=chain, owner=owner, resync=resync
+    )
+    return models.NftResponse(page=1, per_page=0, items=nft_metadata)
 
 
 def main() -> None:

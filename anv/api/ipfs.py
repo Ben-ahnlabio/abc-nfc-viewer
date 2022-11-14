@@ -17,7 +17,7 @@ class IPFSDownloadError(IPFSError):
     pass
 
 
-class IPFSGateway:
+class IPFSProxy:
     def __init__(self):
         self.gp_urls = [
             "https://ipfs.io/ipfs/",

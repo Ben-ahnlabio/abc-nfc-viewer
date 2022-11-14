@@ -44,8 +44,8 @@ def test_alchemy_get_NFT_metadata(alchemy_api: alchemy.AlchemyApi):
     # result = alchemy_api.get_NFT_metadata("0x2931b181ae9dc8f8109ec41c42480933f411ef94")
     result = alchemy_api.get_NFT_metadata(
         alchemy.AlchemyNet.EthMainNet,
-        "0x008C69E0c66EbD4b228D27F2162aD54AB1b7dDE1",
-        token_id="413",
+        "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
+        token_id="0x0f59",
     )
     assert result
 
@@ -59,8 +59,8 @@ def test_alchemy_get_NFT_metadata_raw(alchemy_api: alchemy.AlchemyApi):
 
     result = alchemy_api.get_NFT_metadata_raw(
         alchemy.AlchemyNet.EthMainNet,
-        "0x008C69E0c66EbD4b228D27F2162aD54AB1b7dDE1",
-        token_id="413",
+        "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb",
+        token_id="0x0f59",
     )
 
     assert result

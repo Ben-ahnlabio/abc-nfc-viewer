@@ -9,7 +9,7 @@ log.addHandler(logging.StreamHandler())
 
 
 def test_ipfs_download():
-    gateway = ipfs.IPFSGateway()
+    gateway = ipfs.IPFSProxy()
     ipfs_url = "ipfs://Qmd4ZCowwMdttP6W8nVWdxVnDYw1kcVe86aG9QuN9fooKJ/v2.info8749.json"
     ipfs_url = "ipfs://QmdD6oF51J3aWjqsCYQKyuBtYhg69PdK7LGLiHBMqrR8B6/v2.info9443.json"
     with tempfile.TemporaryDirectory() as dir:

@@ -1,8 +1,12 @@
+import base64
 import hashlib
 import json
+import logging
 import pathlib
-from typing import List, Protocol, Optional
+from typing import Protocol, Optional
 from anv import models
+
+log = logging.getLogger(f"anv.{__name__}")
 
 
 def get_sha256(string: str) -> str:
@@ -19,8 +23,8 @@ class NFSMetadataRespository(Protocol):
         pass
 
 
-class NFSSourceRepository(Protocol):
-    def get_nft_cached_urls(self, nfs_url: str) -> models.NftUrl:
+class NFTSourceRepository(Protocol):
+    def get_nft_cached_urls(self, uri: str) -> models.NftUrl:
         pass
 
 
@@ -75,11 +79,23 @@ class DBRepository(NFSMetadataRespository):
         return True
 
 
-class DiskNFSSourceRepository(NFSSourceRepository):
+class DiskNFSSourceRepository(NFTSourceRepository):
     def __init__(self):
         self.repo_dir = pathlib.Path(__file__).parent / ".data"
 
-    def get_nft_cached_urls(self, uri: Optional[str]) -> models.NftUrl:
-        if not uri:
-            return None
-        return models.NftUrl(original=uri)
+    def get_nft_cached_urls(self, uri: str) -> models.NftUrl:
+        new_uri = self._remove_quote_escape(uri)
+        return models.NftUrl(original=new_uri)
+
+    def _remove_quote_escape(self, uri: str):
+        if uri.startswith("data:image/svg+xml;utf8,"):
+            _, data = uri.split("data:image/svg+xml;utf8,")
+            # _, base64_data = uri.split(",")
+            encoded_data = base64.encode(data)
+            # text = decoded_data.decode("utf-8")
+            result = f"data:iamge/base64;utf8,{encoded_data}"
+
+            # log.info(result)
+            return uri
+        else:
+            return uri

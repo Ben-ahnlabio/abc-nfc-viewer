@@ -7,7 +7,7 @@ from anv import models
 from anv import api
 from anv.api import alchemy, kas, moralis, nft, infura
 from anv.repository import NFSMetadataRespository, DiskRepository
-from anv.api.ipfs import IPFSGateway
+from anv.api.ipfs import IPFSProxy
 
 import web3
 import pytest
@@ -124,7 +124,7 @@ def infura_api(infura_env):
 
 @pytest.fixture
 def ipfs():
-    yield IPFSGateway()
+    yield IPFSProxy()
 
 
 @pytest.fixture

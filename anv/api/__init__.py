@@ -7,7 +7,7 @@ import requests
 
 from anv import models, repository
 from anv.api import alchemy, kas, moralis
-from anv.api.ipfs import IPFSGateway
+from anv.api.ipfs import IPFSProxy
 
 log = logging.getLogger(f"anv.{__name__}")
 
@@ -35,7 +35,7 @@ class AlchemyBaseApi(ChainNetData):
     def __init__(
         self,
         repo: repository.NFSMetadataRespository,
-        ipfs: IPFSGateway,
+        ipfs: IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
         self.alchemy_api = alchemy_api
@@ -91,7 +91,7 @@ class EthereumApi(AlchemyBaseApi):
     def __init__(
         self,
         repo: repository.NFSMetadataRespository,
-        ipfs: IPFSGateway,
+        ipfs: IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
         super().__init__(repo, ipfs, alchemy_api)
@@ -102,7 +102,7 @@ class PolygonApi(AlchemyBaseApi):
     def __init__(
         self,
         repo: repository.NFSMetadataRespository,
-        ipfs: IPFSGateway,
+        ipfs: IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
         super().__init__(repo, ipfs, alchemy_api)
@@ -113,7 +113,7 @@ class KlaytnApi(ChainNetData):
     def __init__(
         self,
         repo: repository.NFSMetadataRespository,
-        ipfs: IPFSGateway,
+        ipfs: IPFSProxy,
         kas: kas.KasApi,
     ):
         self.kas = kas
@@ -239,7 +239,7 @@ class BinanceApi(ChainNetData):
     def __init__(
         self,
         repo: repository.NFSMetadataRespository,
-        ipfs: IPFSGateway,
+        ipfs: IPFSProxy,
         moralis_api: moralis.MorailsApi,
     ):
         self.moralis_api = moralis_api
