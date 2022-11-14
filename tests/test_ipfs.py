@@ -14,5 +14,5 @@ def test_ipfs_download():
     ipfs_url = "ipfs://QmdD6oF51J3aWjqsCYQKyuBtYhg69PdK7LGLiHBMqrR8B6/v2.info9443.json"
     with tempfile.TemporaryDirectory() as dir:
         output_filepath = pathlib.Path(dir)
-        gateway.get_ipfs_binary(ipfs_url, output_filepath)
-        assert output_filepath.exists()
+        bin_path = gateway.get_ipfs_binary(ipfs_url, output_filepath)
+        assert bin_path.exists()

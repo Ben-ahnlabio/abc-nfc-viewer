@@ -6,7 +6,7 @@ from typing import List, Optional, Protocol, TypedDict
 import requests
 
 from anv import models, repository
-from anv.api import alchemy, kas
+from anv.api import alchemy, kas, moralis
 from anv.api.ipfs import IPFSGateway
 
 log = logging.getLogger(f"anv.{__name__}")
@@ -31,16 +31,21 @@ class ChainNetData(Protocol):
         pass
 
 
-class EthereumApi(ChainNetData):
+class AlchemyBaseApi(ChainNetData):
     def __init__(
         self,
-        repo: repository.Respository,
+        repo: repository.NFSMetadataRespository,
         ipfs: IPFSGateway,
-        alchemy: alchemy.AlchemyApi,
+        alchemy_api: alchemy.AlchemyApi,
     ):
-        self.alchemy = alchemy
+        self.alchemy_api = alchemy_api
         self.repo = repo
         self.ipfs = ipfs
+        self.network: alchemy.AlchemyNet
+        self.net_map = {
+            alchemy.AlchemyNet.EthMainNet.value: models.Chain.ETHEREUM,
+            alchemy.AlchemyNet.PolygonMainNet.value: models.Chain.POLYGON,
+        }
 
     def get_NFTs_by_owner(
         self, owner: str, resync: bool = False
@@ -57,33 +62,59 @@ class EthereumApi(ChainNetData):
             owner: wallet address
             resync: repository 데이터 사용
         """
-        owned_nfts = self.alchemy.get_NFTs(alchemy.AlchemyNet.EthMainNet, owner)
+        owned_nfts = self.alchemy_api.get_NFTs(self.network, owner)
         if resync:
-            return [self._get_nft_metadata_from_api(nft) for nft in owned_nfts]
+            result = [self._get_nft_metadata_from_api(nft) for nft in owned_nfts]
         else:
-            return [self._get_nft_metadata(nft) for nft in owned_nfts]
+            result = [self._get_nft_metadata(nft) for nft in owned_nfts]
+        return [nft for nft in result if nft is not None]
 
     def _get_nft_metadata_from_api(
         self, nft: alchemy.AlchemyOwnedNft
     ) -> models.NftMetadata:
-        nft_metadata = self.alchemy.get_NFT_metadata(
-            alchemy.AlchemyNet.EthMainNet, nft.contract_address, nft.token_id
+        nft_metadata = self.alchemy_api.get_NFT_metadata(
+            self.network, nft.contract_address, nft.token_id
         )
-        self.repo.set_NFT_metadata(models.Network.ETHEREUM, nft_metadata)
+        self.repo.set_NFT_metadata(self.net_map[self.network.value], nft_metadata)
         return nft_metadata
 
     def _get_nft_metadata(self, nft: alchemy.AlchemyOwnedNft) -> models.NftMetadata:
         metadata = self.repo.get_NFT_metadata(
-            models.Network.ETHEREUM, nft.contract_address, nft.token_id
+            self.net_map[self.network.value], nft.contract_address, nft.token_id
         )
         if metadata:
             return metadata
         return self._get_nft_metadata_from_api(nft)
 
 
+class EthereumApi(AlchemyBaseApi):
+    def __init__(
+        self,
+        repo: repository.NFSMetadataRespository,
+        ipfs: IPFSGateway,
+        alchemy_api: alchemy.AlchemyApi,
+    ):
+        super().__init__(repo, ipfs, alchemy_api)
+        self.network = alchemy.AlchemyNet.EthMainNet
+
+
+class PolygonApi(AlchemyBaseApi):
+    def __init__(
+        self,
+        repo: repository.NFSMetadataRespository,
+        ipfs: IPFSGateway,
+        alchemy_api: alchemy.AlchemyApi,
+    ):
+        super().__init__(repo, ipfs, alchemy_api)
+        self.network = alchemy.AlchemyNet.PolygonMainNet
+
+
 class KlaytnApi(ChainNetData):
     def __init__(
-        self, repo: repository.Respository, ipfs: IPFSGateway, kas: kas.KasApi
+        self,
+        repo: repository.NFSMetadataRespository,
+        ipfs: IPFSGateway,
+        kas: kas.KasApi,
     ):
         self.kas = kas
         self.repo = repo
@@ -92,27 +123,14 @@ class KlaytnApi(ChainNetData):
     def get_NFTs_by_owner(
         self, owner: str, resync: bool = False
     ) -> List[models.NftMetadata]:
-        # thl = self.kas.get_nft_transfer_history_by_owner(kas.ChainId.Cypress, owner)
-        # contract_address_set = {th.contract.address for th in thl}
-        # owned_nft_list: List[kas.KlaytnOwnedNft] = []
-        # for ca in contract_address_set:
-        #     owned_nft_list += self.kas.get_nft_list_by_owner(
-        #         kas.ChainId.Cypress, owner, ca
-        #     )
-
         owned_nft_list = self.kas.get_tokens_by_owner(
             kas.ChainId.Cypress, owner, (kas.TokenKind.NFT,)
         )
         if resync:
-            return [
-                self._get_nft_metadata_from_api(nft)
-                for nft in owned_nft_list
-                if nft is not None
-            ]
+            result = [self._get_nft_metadata_from_api(nft) for nft in owned_nft_list]
         else:
-            return [
-                self._get_nft_metadata(nft) for nft in owned_nft_list if nft is not None
-            ]
+            result = [self._get_nft_metadata(nft) for nft in owned_nft_list]
+        return [nft for nft in result if nft is not None]
 
     def _get_nft_metadata_from_api(
         self, nft: kas.KlaytnOwnedNft
@@ -145,26 +163,27 @@ class KlaytnApi(ChainNetData):
             return None
 
         nft_metadata = models.NftMetadata(
-            network=models.Network.KLAYTN.value,
+            chain=models.Chain.KLAYTN.value,
             contract_address=nft.contract_address,
             token_id=nft.token_id,
             token_type=nft_contract.type,
             name=token_data["name"],
             image=token_data["image"],
+            animation_url=token_data.get("animation_url"),
             description=token_data.get("description"),
             attributes=[
                 models.NftAttribute(trait_type=attr["trait_type"], value=attr["value"])
                 for attr in token_data.get("attributes", [])
             ],
         )
-        self.repo.set_NFT_metadata(models.Network.KLAYTN, nft_metadata)
+        self.repo.set_NFT_metadata(models.Chain.KLAYTN, nft_metadata)
         return nft_metadata
 
     def _get_nft_metadata(
         self, nft: kas.KlaytnOwnedNft
     ) -> Optional[models.NftMetadata]:
         nft_metadata = self.repo.get_NFT_metadata(
-            models.Network.KLAYTN, nft.contract_address, nft.token_id
+            models.Chain.KLAYTN, nft.contract_address, nft.token_id
         )
         if nft_metadata:
             return nft_metadata
@@ -199,16 +218,6 @@ class KlaytnApi(ChainNetData):
         r.raise_for_status()
         return r.json()
 
-    # def _get_ipfs_data(self, uri: str) -> NFTTokenJson:
-    #     try:
-    #         return self.ipfs.get_json(uri)
-    #     except ValueError as e:
-    #         log.warning("nft token uri source value error. %s. %s", e, uri)
-    #     except IPFSError as e:
-    #         log.error("ipfs error. %s. %s", e, uri)
-
-    #     return {"name": "", "image": "", "description": "", "attributes": []}
-
     def _get_nft_contract(self, contract_address: str) -> models.KlaytnNftContract:
         result = self.kas.get_nft_contract_raw(kas.ChainId.Cypress, contract_address)
         return models.KlaytnNftContract(
@@ -227,13 +236,16 @@ class KlaytnApi(ChainNetData):
 
 
 class BinanceApi(ChainNetData):
-    def get_NFTs_by_owner(
-        self, owner: str, resync: bool = False
-    ) -> List[models.NftMetadata]:
-        return super().get_NFTs_by_owner(owner)
+    def __init__(
+        self,
+        repo: repository.NFSMetadataRespository,
+        ipfs: IPFSGateway,
+        moralis_api: moralis.MorailsApi,
+    ):
+        self.moralis_api = moralis_api
+        self.repo = repo
+        self.ipfs = ipfs
 
-
-class PolygonApi(ChainNetData):
     def get_NFTs_by_owner(
         self, owner: str, resync: bool = False
     ) -> List[models.NftMetadata]:

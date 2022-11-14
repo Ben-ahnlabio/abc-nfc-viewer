@@ -4,7 +4,7 @@ import os
 import enum
 from typing import List
 import requests
-from anv.models import Network, NftMetadata, NftAttribute
+from anv.models import Chain, NftMetadata, NftAttribute
 
 log = logging.getLogger(f"anv.{__name__}")
 
@@ -107,13 +107,14 @@ class AlchemyApi:
             token_type = ""
 
         return NftMetadata(
-            network=Network.ETHEREUM.value,
+            chain=Chain.ETHEREUM.value,
             contract_address=contract_address,
             token_id=token_id,
             token_type=token_type,
             name=name,
             description=metadata.get("description"),
             image=metadata.get("image"),
+            animation_url=metadata.get("animation_url"),
             attributes=[
                 NftAttribute(trait_type=attr["trait_type"], value=attr["value"])
                 for attr in metadata.get("attributes", [])

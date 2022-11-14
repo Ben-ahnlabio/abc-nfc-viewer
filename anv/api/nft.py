@@ -3,13 +3,13 @@ from typing import List
 
 from anv import models
 from anv.api import alchemy
-from anv.repository import Respository
+from anv.repository import NFSMetadataRespository
 
 log = logging.getLogger(f"anv.{__name__}")
 
 
 class NftApi:
-    def __init__(self, repo: Respository, alchemy: alchemy.AlchemyApi):
+    def __init__(self, repo: NFSMetadataRespository, alchemy: alchemy.AlchemyApi):
         self.alchemy = alchemy
         self.repo = repo
 
@@ -40,7 +40,7 @@ class NftApi:
 
     def _get_ethereum_nft_metadata(self, nft: alchemy.AlchemyOwnedNft):
         metadata = self.repo.get_NFT_metadata(
-            models.Network.ETHEREUM, nft.contract_address, nft.token_id
+            models.Chain.ETHEREUM, nft.contract_address, nft.token_id
         )
         if metadata:
             return metadata

@@ -2,7 +2,6 @@ import json
 import logging
 import pathlib
 import tempfile
-from typing import Optional
 from urllib.parse import urljoin
 
 import requests

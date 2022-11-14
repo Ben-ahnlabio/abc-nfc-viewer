@@ -1,14 +1,14 @@
 import enum
-from typing import List, Optional
+from typing import List, Optional, TypedDict
 
 import pydantic
 
 
-class Network(enum.Enum):
-    ETHEREUM = "Ethereum"
-    KLAYTN = "Klaytn"
-    POLYGON = "Polygon"
-    BINANCE = "Binance"
+class Chain(enum.Enum):
+    ETHEREUM = "ethereum"
+    KLAYTN = "klaytn"
+    POLYGON = "polygon"
+    BINANCE = "binance"
 
 
 class NftAttribute(pydantic.BaseModel):
@@ -16,26 +16,34 @@ class NftAttribute(pydantic.BaseModel):
     value: str
 
 
+class NftUrl(pydantic.BaseModel):
+    small: Optional[str]
+    large: Optional[str]
+    original: str
+
+
 class NftMetadata(pydantic.BaseModel):
-    network: str
+    owner: Optional[str]
+    chain: str  # ethereum, klaytn, polygon, binance
     contract_address: str
     token_id: str
     token_type: str
     name: str
     description: Optional[str]
-    image: Optional[str]
-    url: Optional[pydantic.HttpUrl]
+    image: Optional[str]  # token uri 상의 NFT image. (http, IPFS, raw data)
+    animation_url: Optional[str]  # opensea 의 video, music nft 의 source url
+    url: Optional[NftUrl]
     attributes: Optional[List[NftAttribute]]
     cached: bool = True  # cache 데이터인지 ? API 데이터인지
 
     def __str__(self) -> str:
-        return f"[{self.network} - {self.token_type}] {self.name} - {self.description}"
+        return f"[{self.chain} - {self.token_type}] {self.name} - {self.description}"
 
 
 class NftResponse(pydantic.BaseModel):
-    owner: str  # wallet address
-    network: Network  # ethereum, klaytn, polygon, binance
-    nfts: Optional[List[NftMetadata]]
+    page: int
+    per_page: int
+    items: Optional[List[NftMetadata]]
 
 
 class KlaytnNftContract(pydantic.BaseModel):

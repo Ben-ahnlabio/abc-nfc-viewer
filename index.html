@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NFT</title>
+    <style>
+      body {
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NFT</h1>
+    <div>
+      <form>
+        <input id="inputAddress" type="text" placeholder="address" />
+        <select id="selectChain">
+          <option>ethereum</option>
+          <option>polygon</option>
+          <option>klaytn</option>
+        </select>
+        <input id="btnSubmit" type="submit" value="show NFTs" />
+      </form>
+      <ul id="nftList"></ul>
+    </div>
+    <script>
+      function init() {
+        const btnSubmit = document.getElementById("btnSubmit");
+        btnSubmit.addEventListener("click", (e) => {
+          e.preventDefault();
+          const inputAddress = document.getElementById("inputAddress");
+          const chainSelect = document.getElementById("selectChain");
+          getNfts(inputAddress.value, chainSelect.value);
+        });
+      }
+
+      async function getNfts(owner, chain) {
+        const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&page=1&per_page=20&resync=false`;
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log(data);
+        render(data);
+      }
+
+      function render(data) {
+        const nftList = document.getElementById("nftList");
+        nftList.innerHTML = "";
+        data.items.map((item) => {
+          const li = document.createElement("li");
+          nftList.append(li);
+          li.innerHTML = `
+          <div>
+            ${
+              item.url?.original.endsWith("mp4")
+                ? `<video controls style='width:250px;' src='${item.url?.original}' >`
+                : `<img style='width:250px;' src='${item.url?.original}' >`
+            }
+          </div>
+          <div>
+            <p>contract: ${item.contract_address}</p>
+            <p>token_id: ${item.token_id} </p>
+            <p>token_type: ${item.token_type} </p>
+            <p>name: ${item.name} </p>
+            <p>description: ${item.description} </p>
+          </div>
+          `;
+        });
+      }
+
+      init();
+    </script>
+  </body>
+</html>

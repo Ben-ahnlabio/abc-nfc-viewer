@@ -4,6 +4,7 @@ from anv.api import alchemy
 
 def test_disk_repository(alchemy_api: alchemy.AlchemyApi):
     data = {
+        "chain": "ethereum",
         "contract_address": "0x2931b181ae9dc8f8109ec41c42480933f411ef94",
         "token_id": "0x0000000000000000000000000000000000000000000000000000000000000262",
         "token_type": "ERC721",
@@ -32,11 +33,11 @@ def test_disk_repository(alchemy_api: alchemy.AlchemyApi):
     token_id = "0x0000000000000000000000000000000000000000000000000000000000000262"
 
     metadata = models.NftMetadata.parse_obj(data)
-    result = repo.set_NFT_metadata(models.Network.ETHEREUM, metadata)
+    result = repo.set_NFT_metadata(models.Chain.ETHEREUM, metadata)
     assert result
 
     cached_metadata = repo.get_NFT_metadata(
-        models.Network.ETHEREUM, contract_address, token_id
+        models.Chain.ETHEREUM, contract_address, token_id
     )
     assert cached_metadata
     assert metadata == cached_metadata

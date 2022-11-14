@@ -5,10 +5,11 @@ import tempfile
 from typing import Optional
 from anv import models
 from anv import api
-from anv.api import alchemy, kas, morails, nft
-from anv.repository import Respository, DiskRepository
+from anv.api import alchemy, kas, moralis, nft, infura
+from anv.repository import NFSMetadataRespository, DiskRepository
 from anv.api.ipfs import IPFSGateway
 
+import web3
 import pytest
 
 
@@ -66,7 +67,6 @@ def alchemy_api(alchemy_api_key_env):
 
 @pytest.fixture
 def kas_env():
-
     os.environ["KAS_ACCESS_KEY_ID"] = "KASKOTSLZ89LS5RRCULWECVW"
     os.environ["KAS_SECRET_ACCESS_KEY"] = "__9FCFEi_IOdydovTLyMAO3Nt2XRIUf3m2pt9IZJ"
     os.environ[
@@ -81,14 +81,14 @@ def kas_api(kas_env):
 
 @pytest.fixture
 def moralis_api(moralis_api_key_env):
-    yield morails.MorailsApi()
+    yield moralis.MorailsApi()
 
 
 @pytest.fixture
 def nft_api(alchemy_api):
-    class Repo(Respository):
+    class Repo(NFSMetadataRespository):
         def get_NFT_metadata(
-            self, network: models.Network, contract_address: str, token_id: str
+            self, network: models.Chain, contract_address: str, token_id: str
         ) -> Optional[models.NftMetadata]:
             return None
 
@@ -111,5 +111,23 @@ def klaytn_api(disk_repo, ipfs, kas_api):
 
 
 @pytest.fixture
+def infura_env():
+    os.environ["INFURA_API_KEY"] = "c20947b695d14428968c560f69976d74"
+    os.environ["INFURA_SECRET_KEY"] = "f44dc4afe25c4e298705a187977b5405"
+    yield
+
+
+@pytest.fixture
+def infura_api(infura_env):
+    yield infura.InfuraApi()
+
+
+@pytest.fixture
 def ipfs():
     yield IPFSGateway()
+
+
+@pytest.fixture
+def web3_obj():
+    infura_url = "https://mainnet.infura.io/v3/c20947b695d14428968c560f69976d74"
+    yield web3.Web3(web3.Web3.HTTPProvider(infura_url))

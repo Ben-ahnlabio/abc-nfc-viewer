@@ -53,3 +53,4 @@ Thumbs.db
 .coverage
 kas-credential-KASKOTSLZ89LS5RRCULWECVW.json
 anv/.data/*.json
+anv/.data/*/*.json
