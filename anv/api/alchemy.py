@@ -106,6 +106,21 @@ class AlchemyApi:
             )
             token_type = ""
 
+        attributes = []
+        for attr in metadata.get("attributes", []):
+            try:
+                attributes.append(
+                    NftAttribute(trait_type=attr["trait_type"], value=attr["value"])
+                )
+            except KeyError as e:
+                log.warning(
+                    "NftMetadata attribute error. %s. contract_address=%s, token_id=%s",
+                    e,
+                    contract_address,
+                    token_id,
+                )
+            attributes = []
+
         return NftMetadata(
             chain=Chain.ETHEREUM.value,
             contract_address=contract_address,
@@ -115,10 +130,7 @@ class AlchemyApi:
             description=metadata.get("description"),
             image=metadata.get("image"),
             animation_url=metadata.get("animation_url"),
-            attributes=[
-                NftAttribute(trait_type=attr["trait_type"], value=attr["value"])
-                for attr in metadata.get("attributes", [])
-            ],
+            attributes=attributes,
             cached=False,
         )
 

@@ -77,22 +77,22 @@ class AlchemyBaseNFTService(NFTServiceProtocol):
                 ]
             result = [f.result() for f in future_list]
 
-        # if resync:
-        #     result = [self._get_nft_metadata_from_api(nft) for nft in owned_nfts]
-        # else:
-        #     result = [self._get_nft_metadata(nft) for nft in owned_nfts]
         return [nft for nft in result if nft is not None]
 
     def _get_nft_metadata_from_api(
         self, nft: alchemy.AlchemyOwnedNft
     ) -> models.NftMetadata:
-        nft_metadata = self.alchemy_api.get_NFT_metadata(
-            self.network, nft.contract_address, nft.token_id
-        )
+        try:
+            nft_metadata = self.alchemy_api.get_NFT_metadata(
+                self.network, nft.contract_address, nft.token_id
+            )
 
-        # NFT metadata 를 repository 에 caching
-        self.repo.set_NFT_metadata(nft_metadata)
-        return nft_metadata
+            # NFT metadata 를 repository 에 caching
+            self.repo.set_NFT_metadata(nft_metadata)
+            return nft_metadata
+        except Exception as e:
+            log.error("get_nft_metadata_from_api error. %s nft=%s", e, nft)
+            return None
 
     def _get_nft_metadata(self, nft: alchemy.AlchemyOwnedNft) -> models.NftMetadata:
         metadata = self.repo.get_NFT_metadata(
@@ -153,11 +153,6 @@ class KlaytnNFTService(NFTServiceProtocol):
                     exec.submit(self._get_nft_metadata, nft) for nft in owned_nft_list
                 ]
             result = [f.result() for f in future_list]
-
-        # if resync:
-        #     result = [self._get_nft_metadata_from_api(nft) for nft in owned_nft_list]
-        # else:
-        #     result = [self._get_nft_metadata(nft) for nft in owned_nft_list]
         return [nft for nft in result if nft is not None]
 
     def _get_nft_metadata_from_api(
@@ -168,13 +163,21 @@ class KlaytnNFTService(NFTServiceProtocol):
         특정 nft 의 token uri 가 '' 값으로 출력되는 경우가 있음.
         metadata update API 를 호출하여 metadata update 요청
         """
-
-        # nft metadata update
-        self.kas.update_nft_token_metadata(
-            kas.ChainId.Cypress, nft.contract_address, nft.token_id
-        )
-        nft_contract = self._get_nft_contract(nft.contract_address)
         try:
+            # nft metadata update
+            self.kas.update_nft_token_metadata(
+                kas.ChainId.Cypress, nft.contract_address, nft.token_id
+            )
+        except Exception as e:
+            log.error(
+                "klaytn update_nft_token_metadata error. %s. contract_address=%s token_id=%s",
+                e,
+                nft.contract_address,
+                nft.token_id,
+            )
+
+        try:
+            nft_contract = self._get_nft_contract(nft.contract_address)
             token_data = self._get_nft_by_token_uri(nft.token_uri)
         except Exception as e:
             log.exception(
