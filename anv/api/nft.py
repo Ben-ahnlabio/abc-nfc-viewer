@@ -3,13 +3,13 @@ from typing import List
 
 from anv import models
 from anv.api import alchemy
-from anv.repository import NFSMetadataRespository
+from anv.repository import NFTMetadataRespository
 
 log = logging.getLogger(f"anv.{__name__}")
 
 
 class NftApi:
-    def __init__(self, repo: NFSMetadataRespository, alchemy: alchemy.AlchemyApi):
+    def __init__(self, repo: NFTMetadataRespository, alchemy: alchemy.AlchemyApi):
         self.alchemy = alchemy
         self.repo = repo
 

@@ -6,7 +6,7 @@ from typing import Optional
 from anv import models
 from anv import api
 from anv.api import alchemy, kas, moralis, nft, infura
-from anv.repository import NFSMetadataRespository, DiskRepository
+from anv.repository import NFTMetadataRespository, DiskRepository
 from anv.api.ipfs import IPFSProxy
 
 import web3
@@ -86,7 +86,7 @@ def moralis_api(moralis_api_key_env):
 
 @pytest.fixture
 def nft_api(alchemy_api):
-    class Repo(NFSMetadataRespository):
+    class Repo(NFTMetadataRespository):
         def get_NFT_metadata(
             self, network: models.Chain, contract_address: str, token_id: str
         ) -> Optional[models.NftMetadata]:

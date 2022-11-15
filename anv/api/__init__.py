@@ -34,7 +34,7 @@ class ChainNetData(Protocol):
 class AlchemyBaseApi(ChainNetData):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
@@ -90,7 +90,7 @@ class AlchemyBaseApi(ChainNetData):
 class EthereumApi(AlchemyBaseApi):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
@@ -101,7 +101,7 @@ class EthereumApi(AlchemyBaseApi):
 class PolygonApi(AlchemyBaseApi):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
@@ -112,7 +112,7 @@ class PolygonApi(AlchemyBaseApi):
 class KlaytnApi(ChainNetData):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: IPFSProxy,
         kas: kas.KasApi,
     ):
@@ -238,7 +238,7 @@ class KlaytnApi(ChainNetData):
 class BinanceApi(ChainNetData):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: IPFSProxy,
         moralis_api: moralis.MorailsApi,
     ):

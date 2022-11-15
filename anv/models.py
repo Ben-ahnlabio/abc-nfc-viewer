@@ -41,8 +41,6 @@ class NftMetadata(pydantic.BaseModel):
 
 
 class NftResponse(pydantic.BaseModel):
-    page: int
-    per_page: int
     items: Optional[List[NftMetadata]]
 
 

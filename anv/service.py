@@ -36,7 +36,7 @@ class NFTServiceProtocol(Protocol):
 class AlchemyBaseNFTService(NFTServiceProtocol):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: ipfs.IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
@@ -89,6 +89,8 @@ class AlchemyBaseNFTService(NFTServiceProtocol):
         nft_metadata = self.alchemy_api.get_NFT_metadata(
             self.network, nft.contract_address, nft.token_id
         )
+
+        # NFT metadata 를 repository 에 caching
         self.repo.set_NFT_metadata(self.net_map[self.network.value], nft_metadata)
         return nft_metadata
 
@@ -104,7 +106,7 @@ class AlchemyBaseNFTService(NFTServiceProtocol):
 class EthereumNFTService(AlchemyBaseNFTService):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: ipfs.IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
@@ -115,7 +117,7 @@ class EthereumNFTService(AlchemyBaseNFTService):
 class PolygonNFTService(AlchemyBaseNFTService):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: ipfs.IPFSProxy,
         alchemy_api: alchemy.AlchemyApi,
     ):
@@ -126,7 +128,7 @@ class PolygonNFTService(AlchemyBaseNFTService):
 class KlaytnNFTService(NFTServiceProtocol):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: ipfs.IPFSProxy,
         kas: kas.KasApi,
     ):
@@ -264,7 +266,7 @@ class KlaytnNFTService(NFTServiceProtocol):
 class BinanceNFTService(NFTServiceProtocol):
     def __init__(
         self,
-        repo: repository.NFSMetadataRespository,
+        repo: repository.NFTMetadataRespository,
         ipfs: ipfs.IPFSProxy,
         moralis_api: moralis.MorailsApi,
     ):
@@ -302,6 +304,8 @@ class NFTService:
         for nft in nft_metadata:
             if nft.image:
                 nft.url = self.repo.get_nft_cached_urls(nft.image)
+            elif nft.animation_url:
+                nft.url = self.repo.get_nft_cached_urls(nft.animation_url)
             else:
                 nft.url = None
 

@@ -58,8 +58,9 @@ class AppConfig:
     def get_kas_api(self) -> kas.KasApi:
         return kas.KasApi()
 
-    def get_nft_meta_repository(self) -> repository.DiskRepository:
-        return repository.DiskRepository()
+    def get_nft_meta_repository(self) -> repository.NFTMetadataRespository:
+        # return repository.DiskRepository()
+        return repository.MongodbRepository()
 
     def get_nft_src_repository(self) -> repository.DiskNFSSourceRepository:
         return repository.DiskNFSSourceRepository()
