@@ -1,0 +1,48 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+ol, ul {
+	list-style: none;
+}
+
+
+#nftList {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#nftList li {
+    width: 300px;
+    padding: 15px 15px;
+    overflow: hidden;
+    border-radius: 10px;
+    margin-top: 15px;
+    margin-right: 15px;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+#nftList li p {
+    margin-top: 5px;
+}
+
+div.nft-source {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+p.nft-type {
+    font-size: 12px;
+}
+
+p.nft-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+p.nft-desc{
+    font-size: 12px;
+    line-height: 14px;
+}

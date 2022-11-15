@@ -5,24 +5,44 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NFT</title>
-    <style>
-      body {
-        font-size: 12px;
-      }
-    </style>
+    <link href="style.css" rel="stylesheet" />
+    <style></style>
   </head>
   <body>
     <h1>NFT</h1>
     <div>
       <form>
-        <input id="inputAddress" type="text" placeholder="address" />
+        <input
+          id="inputAddress"
+          type="text"
+          placeholder="address"
+          value="0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797"
+        />
         <select id="selectChain">
           <option>ethereum</option>
           <option>polygon</option>
           <option>klaytn</option>
         </select>
-        <input id="btnSubmit" type="submit" value="show NFTs" />
+        <input id="btnSubmit" type="submit" value="show NFT" />
       </form>
+      <h2>ethereum</h2>
+      <ul>
+        <li>0x2488f090656BddB63fe3Bdb506D0D109AaaD93Bb</li>
+        <li>0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797</li>
+        <li>0x0232d1083E970F0c78f56202b9A666B526FA379F</li>
+      </ul>
+
+      <h2>klaytn</h2>
+      <ul>
+        <li>0x03E5ecA4B61412A5ece56928318d00c3b5567ef8</li>
+        <li>0x9B0582d70744464D7c3Ca4452490Ea2F0a0db6a4</li>
+      </ul>
+
+      <h2>polygon</h2>
+      <ul>
+        <li>0xE36223C79EAA9d1e436ab4348721a1c55B46B7c4</li>
+      </ul>
+
       <ul id="nftList"></ul>
     </div>
     <script>
@@ -37,10 +57,9 @@
       }
 
       async function getNfts(owner, chain) {
-        const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&page=1&per_page=20&resync=false`;
+        const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&resync=false`;
         const response = await fetch(url);
         const data = await response.json();
-        console.log(data);
         render(data);
       }
 
@@ -51,19 +70,19 @@
           const li = document.createElement("li");
           nftList.append(li);
           li.innerHTML = `
-          <div>
+          <div class="nft-source">
             ${
-              item.url?.original.endsWith("mp4")
-                ? `<video controls style='width:250px;' src='${item.url?.original}' >`
-                : `<img style='width:250px;' src='${item.url?.original}' >`
+              item.animation_url !== null
+                ? `<video controls style='width:250px;' src="${item.animation_url}" >`
+                : item.url?.original
+                ? `<img style='width:250px;' alt="${item.url?.original}" src="${item.url?.original}" >`
+                : `<img style='width:250px;' alt="${item.image}" src="${item.image}" >`
             }
           </div>
           <div>
-            <p>contract: ${item.contract_address}</p>
-            <p>token_id: ${item.token_id} </p>
-            <p>token_type: ${item.token_type} </p>
-            <p>name: ${item.name} </p>
-            <p>description: ${item.description} </p>
+            <p class="nft-type">${item.token_type} </p>
+            <p class="nft-name">${item.name} </p>
+            <p class="nft-desc">${item.description} </p>
           </div>
           `;
         });
