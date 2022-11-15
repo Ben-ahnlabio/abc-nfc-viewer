@@ -195,6 +195,8 @@ image NFT 가 아닌 music 이나 video NFT 인 경우는 NFT metadata 에 `imag
 
 대신 `animation_url` 이 존재함. 또는 둘다 있을 수도 있음.
 
+animation_url 인 경우 `<video>` 로 출력해야 함.
+
 아래는 metadata 에 image 가 존재하지 않는 경우임
 
 https://opensea.io/assets/ethereum/0x008c69e0c66ebd4b228d27f2162ad54ab1b7dde1/413
@@ -280,3 +282,11 @@ https://opensea.io/assets/ethereum/0x008c69e0c66ebd4b228d27f2162ad54ab1b7dde1/41
   }
 }
 ```
+
+### image 값이 ipfs gateway(http) 인데 연결이 되지 않는 경우
+
+다른 ipfs gateway service 를 사용하여 이미지 출력
+
+### image 값이 'data:image/svg+xml;utf8' 로 시작하는 raw data 인경우
+
+svg 부분을 따로 떼어 png 로 저장하고 caching
