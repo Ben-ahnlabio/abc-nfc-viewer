@@ -1,13 +1,20 @@
-import os
-import base64
 import hashlib
+import io
 import json
 import logging
+import os
 import pathlib
-from typing import Protocol, Optional
+from typing import Optional, Protocol
 
+import magic
 import pymongo
+import requests
+from google.cloud import storage
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
+
 from anv import models
+from anv.api import ipfs
 
 log = logging.getLogger(f"anv.{__name__}")
 
@@ -22,7 +29,7 @@ class NFTMetadataRespository(Protocol):
     ) -> Optional[models.NftMetadata]:
         pass
 
-    def set_NFT_metadata(self, network: models.Chain, data: models.NftMetadata) -> bool:
+    def set_NFT_metadata(self, data: models.NftMetadata) -> bool:
         pass
 
 
@@ -31,7 +38,7 @@ class NFTSourceRepository(Protocol):
     NFT 의 token uri 값을 보내면 caching 된 URL(models.NftUrl) return
     """
 
-    def get_nft_cached_urls(self, uri: str) -> models.NftUrl:
+    def cache_nft_source(self, nft: models.NftMetadata):
         pass
 
 
@@ -53,11 +60,10 @@ class DiskRepository(NFTMetadataRespository):
 
     def set_NFT_metadata(
         self,
-        network: models.Chain,
         data: models.NftMetadata,
     ) -> bool:
         json_filepath = self._get_json_filepath(
-            network, data.contract_address, data.token_id
+            models.Chain(data.chain), data.contract_address, data.token_id
         )
 
         if not json_filepath.parent.exists():
@@ -82,7 +88,6 @@ class DBRepository(NFTMetadataRespository):
 
     def set_NFT_metadata(
         self,
-        network: models.Chain,
         data: models.NftMetadata,
     ) -> bool:
         return True
@@ -107,11 +112,11 @@ class MongodbRepository(NFTMetadataRespository):
 
         return models.NftMetadata.parse_obj(result)
 
-    def set_NFT_metadata(self, network: models.Chain, data: models.NftMetadata) -> bool:
+    def set_NFT_metadata(self, data: models.NftMetadata) -> bool:
         data.cached = True
         result = self.client.nft.metadata.find_one_and_replace(
             {
-                "chain": network.value,
+                "chain": data.chain,
                 "contract_address": data.contract_address,
                 "token_id": data.token_id,
             },
@@ -136,25 +141,107 @@ class DiskNFSSourceRepository(NFTSourceRepository):
     def __init__(self):
         self.repo_dir = pathlib.Path(__file__).parent / ".data"
 
-    def get_nft_cached_urls(self, uri: str) -> models.NftUrl:
-        new_uri = self._remove_quote_escape(uri)
-        return models.NftUrl(original=new_uri)
+    def cache_nft_source(self, nft: models.NftMetadata):
+        pass
 
     def _remove_quote_escape(self, uri: str):
         return uri
-        # if uri.startswith("data:image/svg+xml;utf8,"):
-        #     _, data = uri.split("data:image/svg+xml;utf8,")
-        #     # _, base64_data = uri.split(",")
-        #     encoded_data = base64.encode(data)
-        #     # text = decoded_data.decode("utf-8")
-        #     result = f"data:iamge/base64;utf8,{encoded_data}"
-
-        #     # log.info(result)
-        #     return uri
-        # else:
-        #     return uri
 
 
 class GcpNFTSourceRepository(NFTSourceRepository):
-    def get_nft_cached_urls(self, uri: str) -> models.NftUrl:
-        return super().get_nft_cached_urls(uri)
+    def __init__(self, repo: NFTMetadataRespository, ipfs: ipfs.IPFSProxy):
+        self.repo = repo
+        self.ipfs = ipfs
+        self.storage = storage.Client()
+        self.bucket = self.storage.bucket("nft_source")
+
+    def store_nft_source(self, uri, uri_hash):
+        with io.BytesIO() as buffer:
+            self._get_binary_from_uri(uri, buffer)
+            original_name = f"{uri_hash}_original"
+            return self._upload_blob(buffer, original_name)
+
+    def cache_nft_source(self, nft: models.NftMetadata):
+        log.debug("cache nft source %s", nft)
+        uri = nft.image or nft.animation_url
+        if not uri:
+            return
+
+        uri_hash = get_sha256(uri)
+        original_name = f"{uri_hash}_original"
+        blob = self.bucket.get_blob(original_name)
+        if blob:
+            nft.url = models.NftUrl(original=blob.public_url)
+        else:
+            blob = self.store_nft_source(uri, uri_hash)
+            if blob:
+                nft.url = models.NftUrl(original=blob.public_url)
+
+        self.repo.set_NFT_metadata(nft)
+
+    def _upload_blob(self, file_obj, destination_blob_name):
+        """Uploads a file to the bucket."""
+
+        blob = self.bucket.blob(destination_blob_name)
+        file_obj.seek(0)
+        content_type = magic.from_buffer(file_obj.read(1024 * 1024), mime=True)
+        log.debug("uploading blob...")
+        blob.upload_from_file(file_obj, rewind=True, content_type=content_type)
+
+        log.debug(
+            "[UPLOADED] File blob_name=%s content_type=%s",
+            destination_blob_name,
+            content_type,
+        )
+
+        return blob
+
+    def _get_binary_from_uri(
+        self, uri: str, buffer: io.BytesIO
+    ) -> Optional[io.BytesIO]:
+        if uri.startswith("http"):
+            return self._get_binary_from_http(uri, buffer)
+        elif uri.startswith("ipfs://"):
+            return self._get_binary_from_ipfs(uri, buffer)
+        elif uri.startswith("data:image/svg+xml;utf8"):
+            return self._get_binary_from_raw_data(uri, buffer)
+        else:
+            return None
+
+    def _get_binary_from_ipfs(
+        self, ipfs_url: str, buffer: io.BytesIO
+    ) -> Optional[io.BytesIO]:
+        return self.ipfs.get_ipfs_binary(ipfs_url, buffer)
+
+    def _get_binary_from_http(
+        self, uri: str, buffer: io.BytesIO
+    ) -> Optional[io.BytesIO]:
+        try:
+            log.debug("getting binary from uri... %s", uri)
+            r = requests.get(uri, timeout=5)
+            r.raise_for_status()
+            for chunk in r.iter_content(1024 * 1024):
+                buffer.write(chunk)
+            return buffer
+        except Exception as e:
+            log.error("requests error. %s uri=%s.", e, uri)
+
+        if "ipfs/" not in uri:
+            return None
+
+        buffer.seek(0)
+        buffer.truncate(0)
+        return self.ipfs.get_binary_from_http_url(uri, buffer)
+
+    def _get_binary_from_raw_data(
+        self, uri: str, buffer: io.BytesIO
+    ) -> Optional[io.BytesIO]:
+        _, data = uri.split(",")
+
+        # log.info(data)
+        with io.StringIO() as data_buffer:
+            data_buffer.write(data)
+            data_buffer.seek(0)
+            drawing = svg2rlg(data_buffer)
+            # log.info(drawing)
+            renderPM.drawToFile(drawing, buffer, dpi=72 * 10, fmt="PNG")

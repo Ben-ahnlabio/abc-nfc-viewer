@@ -75,7 +75,7 @@ class AlchemyBaseApi(ChainNetData):
         nft_metadata = self.alchemy_api.get_NFT_metadata(
             self.network, nft.contract_address, nft.token_id
         )
-        self.repo.set_NFT_metadata(self.net_map[self.network.value], nft_metadata)
+        self.repo.set_NFT_metadata(nft_metadata)
         return nft_metadata
 
     def _get_nft_metadata(self, nft: alchemy.AlchemyOwnedNft) -> models.NftMetadata:
@@ -176,7 +176,7 @@ class KlaytnApi(ChainNetData):
                 for attr in token_data.get("attributes", [])
             ],
         )
-        self.repo.set_NFT_metadata(models.Chain.KLAYTN, nft_metadata)
+        self.repo.set_NFT_metadata(nft_metadata)
         return nft_metadata
 
     def _get_nft_metadata(

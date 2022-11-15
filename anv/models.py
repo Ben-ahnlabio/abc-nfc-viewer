@@ -37,7 +37,7 @@ class NftMetadata(pydantic.BaseModel):
     cached: bool = True  # cache 데이터인지 ? API 데이터인지
 
     def __str__(self) -> str:
-        return f"[{self.chain} - {self.token_type}] {self.name} - {self.description}"
+        return f"[{self.chain} - {self.token_type}] {self.name} - {self.contract_address} - {self.token_id}"
 
 
 class NftResponse(pydantic.BaseModel):

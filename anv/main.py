@@ -1,10 +1,10 @@
 import logging
 
 import dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
-from anv import api, config, models
+from anv import config, models
 
 log = logging.getLogger("anv")
 log.setLevel(logging.DEBUG)
@@ -37,12 +37,30 @@ async def root():
 
 
 @app.get("/v1/nfts/{chain}", response_model=models.NftResponse)
-async def get_nft_by_owner_v2(chain: models.Chain, owner: str, resync: bool = False):
+async def get_nft_by_owner_v1(
+    chain: models.Chain,
+    owner: str,
+    background_tasks: BackgroundTasks,
+    resync: bool = False,
+):
     nft_service = app_config.get_nft_service()
     nft_metadata = nft_service.get_NFTs_by_owner(
         chain=chain, owner=owner, resync=resync
     )
+
+    task_list = filter(lambda nft: nft.url is None, nft_metadata)
+    for nft in task_list:
+        background_tasks.add_task(cache_nft_source, nft)
+
     return models.NftResponse(items=nft_metadata)
+
+
+def cache_nft_source(nft: models.NftMetadata):
+    repo = app_config.get_nft_src_repository()
+    try:
+        repo.cache_nft_source(nft)
+    except Exception as e:
+        log.error("cache nft source error. %s", e)
 
 
 def main() -> None:

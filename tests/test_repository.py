@@ -33,7 +33,7 @@ def test_disk_repository(alchemy_api: alchemy.AlchemyApi):
     token_id = "0x0000000000000000000000000000000000000000000000000000000000000262"
 
     metadata = models.NftMetadata.parse_obj(data)
-    result = repo.set_NFT_metadata(models.Chain.ETHEREUM, metadata)
+    result = repo.set_NFT_metadata(metadata)
     assert result
 
     cached_metadata = repo.get_NFT_metadata(

@@ -1,6 +1,7 @@
 import json
 import logging
 import pathlib
+import io
 import tempfile
 from urllib.parse import urljoin
 
@@ -26,30 +27,39 @@ class IPFSProxy:
             "https://cloudflare-ipfs.com/ipfs/",
         ]
 
-    def get_json(self, ipfs_uri: str):
-        with tempfile.TemporaryDirectory() as dir:
-            json_file = self.get_ipfs_binary(ipfs_uri, pathlib.Path(dir))
-            with json_file.open("r") as f:
-                return json.loads(f.read())
+    def get_json(self, ipfs_uri: str) -> dict:
+        with io.BytesIO() as buffer:
+            self.get_ipfs_binary(ipfs_uri, buffer)
+            buffer.seek(0)
+            data = buffer.read()
+            return json.loads(data)
 
-    def get_ipfs_binary(self, ipfs_uri: str, output_dir: pathlib.Path) -> pathlib.Path:
+    def get_ipfs_binary(self, ipfs_uri: str, buffer: io.BytesIO) -> io.BytesIO:
         ipfs_path = ipfs_uri.replace("ipfs://", "")
         download_urls = [urljoin(gateway, ipfs_path) for gateway in self.gp_urls]
 
         for url in download_urls:
             try:
-                return self._get_binaray(url, output_dir)
+                return self._get_binaray(url, buffer)
             except Exception as e:
+                # 예외발생 시 buffer 비움
+                buffer.seek(0)
+                buffer.truncate(0)
                 log.warning("ipfs download error. %s", e)
 
         raise IPFSDownloadError("ipfs download error.", ipfs_uri)
 
-    def _get_binaray(self, url: str, tmp_dir: pathlib.Path) -> pathlib.Path:
+    def get_binary_from_http_url(self, url: str, buffer: io.BytesIO):
+        _, path = url.split("ipfs/")
+        ipfs_url = f"ipfs://{path}"
+        return self.get_ipfs_binary(ipfs_url, buffer)
+
+    def _get_binaray(self, url: str, buffer: io.BytesIO) -> io.BytesIO:
         log.debug("downloading... url=%s", url)
         r = requests.get(url, timeout=3)
         r.raise_for_status()
-        with tempfile.NamedTemporaryFile("wb", dir=tmp_dir, delete=False) as f:
-            for chunk in r.iter_content(1024 * 1024):
-                f.write(chunk)
-        log.debug("download done... url=%s path=%s", url, f.name)
-        return pathlib.Path(f.name)
+
+        for chunk in r.iter_content(1024 * 1024):
+            buffer.write(chunk)
+        log.debug("download done... url=%s", url)
+        return buffer

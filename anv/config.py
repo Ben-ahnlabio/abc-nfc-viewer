@@ -62,8 +62,11 @@ class AppConfig:
         # return repository.DiskRepository()
         return repository.MongodbRepository()
 
-    def get_nft_src_repository(self) -> repository.DiskNFSSourceRepository:
-        return repository.DiskNFSSourceRepository()
+    def get_nft_src_repository(self) -> repository.NFTSourceRepository:
+        # return repository.DiskNFSSourceRepository()
+        repo = self.get_nft_meta_repository()
+        ipfs = self.get_ipfs_proxy()
+        return repository.GcpNFTSourceRepository(repo, ipfs)
 
     def get_alchemy_api(self) -> alchemy.AlchemyApi:
         return alchemy.AlchemyApi()

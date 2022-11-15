@@ -91,7 +91,7 @@ class AlchemyBaseNFTService(NFTServiceProtocol):
         )
 
         # NFT metadata 를 repository 에 caching
-        self.repo.set_NFT_metadata(self.net_map[self.network.value], nft_metadata)
+        self.repo.set_NFT_metadata(nft_metadata)
         return nft_metadata
 
     def _get_nft_metadata(self, nft: alchemy.AlchemyOwnedNft) -> models.NftMetadata:
@@ -204,7 +204,7 @@ class KlaytnNFTService(NFTServiceProtocol):
                 for attr in token_data.get("attributes", [])
             ],
         )
-        self.repo.set_NFT_metadata(models.Chain.KLAYTN, nft_metadata)
+        self.repo.set_NFT_metadata(nft_metadata)
         return nft_metadata
 
     def _get_nft_metadata(
@@ -300,13 +300,4 @@ class NFTService:
     ) -> List[models.NftMetadata]:
         nft_srv: NFTServiceProtocol = self.chain_map[chain]
         nft_metadata = nft_srv.get_NFTs_by_owner(owner, resync)
-
-        for nft in nft_metadata:
-            if nft.image:
-                nft.url = self.repo.get_nft_cached_urls(nft.image)
-            elif nft.animation_url:
-                nft.url = self.repo.get_nft_cached_urls(nft.animation_url)
-            else:
-                nft.url = None
-
         return nft_metadata
