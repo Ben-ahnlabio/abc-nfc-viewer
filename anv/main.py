@@ -1,4 +1,6 @@
+from concurrent import futures
 import logging
+from typing import List
 
 import dotenv
 from fastapi import FastAPI, BackgroundTasks
@@ -48,19 +50,16 @@ async def get_nft_by_owner_v1(
         chain=chain, owner=owner, resync=resync
     )
 
-    task_list = filter(lambda nft: nft.url is None, nft_metadata)
-    for nft in task_list:
-        background_tasks.add_task(cache_nft_source, nft)
+    task_list = list(filter(lambda nft: nft.url is None, nft_metadata))
+    background_tasks.add_task(cache_nft_source, task_list)
 
     return models.NftResponse(items=nft_metadata)
 
 
-def cache_nft_source(nft: models.NftMetadata):
+def cache_nft_source(nft_list: List[models.NftMetadata]):
     repo = app_config.get_nft_src_repository()
-    try:
-        repo.cache_nft_source(nft)
-    except Exception as e:
-        log.error("cache nft source error. %s", e)
+    with futures.ThreadPoolExecutor(max_workers=5) as exec:
+        _ = {exec.submit(repo.cache_nft_source, nft) for nft in nft_list}
 
 
 def main() -> None:
