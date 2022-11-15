@@ -113,6 +113,7 @@ class MongodbRepository(NFTMetadataRespository):
         return models.NftMetadata.parse_obj(result)
 
     def set_NFT_metadata(self, data: models.NftMetadata) -> bool:
+        log.debug("set nft metadata data=%s", data)
         data.cached = True
         result = self.client.nft.metadata.find_one_and_replace(
             {
@@ -123,6 +124,7 @@ class MongodbRepository(NFTMetadataRespository):
             data.dict(),
         )
         if result is None:
+            log.debug("data not exists. insert data=%s", data)
             result = self.client.nft.metadata.insert_one(data.dict())
         return True
 
@@ -171,8 +173,10 @@ class GcpNFTSourceRepository(NFTSourceRepository):
         original_name = f"{uri_hash}_original"
         blob = self.bucket.get_blob(original_name)
         if blob:
+            log.debug("blob exists. update nft url %s", blob.public_url)
             nft.url = models.NftUrl(original=blob.public_url)
         else:
+            log.debug("blob not exists. store_nft_source url %s", blob.public_url)
             blob = self.store_nft_source(uri, uri_hash)
             if blob:
                 nft.url = models.NftUrl(original=blob.public_url)

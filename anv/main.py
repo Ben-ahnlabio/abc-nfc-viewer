@@ -51,15 +51,22 @@ async def get_nft_by_owner_v1(
     )
 
     task_list = list(filter(lambda nft: nft.url is None, nft_metadata))
-    background_tasks.add_task(cache_nft_source, task_list)
+    for nft in task_list:
+        background_tasks.add_task(cache_nft_source, nft)
+    # background_tasks.add_task(cache_nft_source_list, task_list)
 
     return models.NftResponse(items=nft_metadata)
 
 
-def cache_nft_source(nft_list: List[models.NftMetadata]):
+def cache_nft_source_list(nft_list: List[models.NftMetadata]):
     repo = app_config.get_nft_src_repository()
     with futures.ThreadPoolExecutor(max_workers=5) as exec:
         _ = {exec.submit(repo.cache_nft_source, nft) for nft in nft_list}
+
+
+def cache_nft_source(nft: models.NftMetadata):
+    repo = app_config.get_nft_src_repository()
+    repo.cache_nft_source(nft)
 
 
 def main() -> None:

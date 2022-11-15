@@ -121,8 +121,13 @@ class AlchemyApi:
                 )
             attributes = []
 
+        if network == network.EthMainNet:
+            chain = Chain.ETHEREUM.value
+        elif network == network.PolygonMainNet:
+            chain = Chain.POLYGON.value
+
         return NftMetadata(
-            chain=Chain.ETHEREUM.value,
+            chain=chain,
             contract_address=contract_address,
             token_id=token_id,
             token_type=token_type,

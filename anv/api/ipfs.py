@@ -35,7 +35,7 @@ class IPFSProxy:
             return json.loads(data)
 
     def get_ipfs_binary(self, ipfs_uri: str, buffer: io.BytesIO) -> io.BytesIO:
-        ipfs_path = ipfs_uri.replace("ipfs://", "")
+        _, ipfs_path = ipfs_uri.split("ipfs/")
         download_urls = [urljoin(gateway, ipfs_path) for gateway in self.gp_urls]
 
         for url in download_urls:
