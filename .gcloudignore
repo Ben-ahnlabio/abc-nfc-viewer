@@ -3,3 +3,4 @@ tests
 .pytest_cache
 .vscode
 __pycache__
+*.pyc
