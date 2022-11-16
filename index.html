@@ -57,7 +57,7 @@
       }
 
       async function getNfts(owner, chain) {
-        const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&resync=false`;
+        const url = `https://abc-nft-368700.de.r.appspot.com/v1/nfts/${chain}?owner=${owner}&resync=false`;
         const response = await fetch(url);
         const data = await response.json();
         render(data);
