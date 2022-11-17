@@ -1,6 +1,7 @@
 from anv import api, repository
-from anv.api import alchemy, kas, ipfs
+from anv.api import alchemy, kas, ipfs, moralis
 from anv.service import (
+    BinanceNFTService,
     NFTService,
     KlaytnNFTService,
     EthereumNFTService,
@@ -13,8 +14,15 @@ class AppConfig:
         ethereum = self.get_ethereum_nft_service()
         polygon = self.get_polygon_nft_service()
         klaytn = self.get_klaytn_nft_service()
+        binance = self.get_binance_nft_service()
         repo = self.get_nft_src_repository()
-        return NFTService(ethereum, polygon, klaytn, repo)
+        return NFTService(
+            ethereum=ethereum,
+            polygon=polygon,
+            klaytn=klaytn,
+            binance=binance,
+            repo=repo,
+        )
 
     def get_ethereum_nft_service(self) -> EthereumNFTService:
         nft_metadata_repo = self.get_nft_meta_repository()
@@ -34,6 +42,12 @@ class AppConfig:
         klaytn_api = self.get_kas_api()
         return KlaytnNFTService(nft_metadata_repo, ipfs_proxy, klaytn_api)
 
+    def get_binance_nft_service(self) -> BinanceNFTService:
+        nft_metadata_repo = self.get_nft_meta_repository()
+        ipfs_proxy = self.get_ipfs_proxy()
+        moralis_api = self.get_moralis_api()
+        return BinanceNFTService(nft_metadata_repo, ipfs_proxy, moralis_api)
+
     def get_ethereum_api(self) -> api.EthereumApi:
         repo = self.get_nft_meta_repository()
         ipfs = self.get_ipfs_proxy()
@@ -51,6 +65,12 @@ class AppConfig:
         ipfs = self.get_ipfs_proxy()
         alchemy_api = self.get_alchemy_api()
         return api.PolygonApi(repo, ipfs, alchemy_api)
+
+    def get_binance_api(self) -> api.BinanceApi:
+        repo = self.get_nft_meta_repository()
+        ipfs = self.get_ipfs_proxy()
+        moralis_api = self.get_moralis_api()
+        return api.BinanceApi(repo, ipfs, moralis_api)
 
     def get_ipfs_proxy(self) -> ipfs.IPFSProxy:
         return ipfs.IPFSProxy()
@@ -70,3 +90,6 @@ class AppConfig:
 
     def get_alchemy_api(self) -> alchemy.AlchemyApi:
         return alchemy.AlchemyApi()
+
+    def get_moralis_api(self) -> moralis.MorailsApi:
+        return moralis.MorailsApi()

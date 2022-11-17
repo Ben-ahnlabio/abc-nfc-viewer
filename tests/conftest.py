@@ -3,11 +3,11 @@ import json
 import pathlib
 import tempfile
 from typing import Optional
-from anv import models
-from anv import api
+from anv import models, api, service
 from anv.api import alchemy, kas, moralis, nft, infura
 from anv.repository import NFTMetadataRespository, DiskRepository
 from anv.api.ipfs import IPFSProxy
+
 
 import web3
 import pytest
@@ -131,3 +131,8 @@ def ipfs():
 def web3_obj():
     infura_url = "https://mainnet.infura.io/v3/c20947b695d14428968c560f69976d74"
     yield web3.Web3(web3.Web3.HTTPProvider(infura_url))
+
+
+@pytest.fixture
+def binance_nft_service(disk_repo, ipfs, moralis_api):
+    yield service.BinanceNFTService(disk_repo, ipfs, moralis_api)

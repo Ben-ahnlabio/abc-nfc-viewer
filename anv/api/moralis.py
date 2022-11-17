@@ -1,7 +1,52 @@
 import enum
+import logging
 import os
+from typing import List, Optional
 
+import pydantic
 import requests
+
+log = logging.getLogger(f"anv.{__name__}")
+
+
+class MoralisOwnedNft(pydantic.BaseModel):
+    token_address: str
+    token_id: str
+    owner_of: str
+    block_number: str
+    block_number_minted: str
+    token_hash: str
+    amount: str
+    contract_type: str
+    name: str
+    symbol: Optional[str]
+    token_uri: Optional[str]
+    metadata: Optional[str]
+    last_token_uri_sync: Optional[str]
+    last_metadata_sync: Optional[str]
+    minter_address: Optional[str]
+
+
+class MoralisNFTMetadata(pydantic.BaseModel):
+    token_address: str
+    token_id: str
+    owner_of: str
+    block_number: str
+    block_number_minted: str
+    token_hash: str
+    amount: str
+    contract_type: str
+    name: str
+    symbol: str
+    token_uri: Optional[str]  # None 인 경우 있음
+    metadata: Optional[str]  # None 인 경우 있음
+    # last_token_uri_sync: str
+    # last_metadata_sync: str
+    # minter_address: str
+    # transfer_index: str
+
+    def __str__(self):
+        return f"[{self.name}] {self.token_address=} - {self.token_id=}"
 
 
 class MorailsNetwork(enum.Enum):
@@ -15,20 +60,25 @@ class MorailsApi:
 
     def get_NFT_metadata(
         self, network: MorailsNetwork, contract_address: str, token_id: str
-    ):
-        """
-        https://docs.moralis.io/reference/getnftmetadata
-        """
-        headers = {"accept": "application/json", "X-API-Key": self.api_key}
-        params = {"chain": network.value}
+    ) -> MoralisNFTMetadata:
+        log.debug(
+            "getting moralis nft metadata contract_address=%s token_id=%s",
+            contract_address,
+            token_id,
+        )
+        metadata = self.get_NFT_metadata_raw(network, contract_address, token_id)
+        return MoralisNFTMetadata.parse_obj(metadata)
 
-        url = f"https://deep-index.moralis.io/api/v2/nft/{contract_address}/{token_id}"
-        r = requests.get(url, params=params, headers=headers)
-        r.raise_for_status()
+    def get_NFTs(self, network: MorailsNetwork, owner: str) -> List[MoralisOwnedNft]:
+        # TODO: 100 개의 NFT 만 가져온다. page 이동 필요
+        owned_nfts = self.get_NFTs_raw(network, owner)
+        result = []
+        for nft in owned_nfts["result"]:
+            result.append(MoralisOwnedNft.parse_obj(nft))
+        return result
+        # return [MoralisOwnedNft.parse_obj(nft) for nft in owned_nfts]
 
-        return r.json()
-
-    def get_NFTs(self, network: MorailsNetwork, owner: str):
+    def get_NFTs_raw(self, network: MorailsNetwork, owner: str):
         """
         https://docs.moralis.io/reference/getwalletnfts
         """
@@ -37,6 +87,21 @@ class MorailsApi:
         params = {"chain": network.value, "format": "decimal"}
 
         url = f"https://deep-index.moralis.io/api/v2/{owner}/nft"
+        r = requests.get(url, params=params, headers=headers)
+        r.raise_for_status()
+
+        return r.json()
+
+    def get_NFT_metadata_raw(
+        self, network: MorailsNetwork, contract_address: str, token_id: str
+    ):
+        """
+        https://docs.moralis.io/reference/getnftmetadata
+        """
+        headers = {"accept": "application/json", "X-API-Key": self.api_key}
+        params = {"chain": network.value}
+
+        url = f"https://deep-index.moralis.io/api/v2/nft/{contract_address}/{token_id}"
         r = requests.get(url, params=params, headers=headers)
         r.raise_for_status()
 
