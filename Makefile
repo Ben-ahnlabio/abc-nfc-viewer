@@ -2,4 +2,4 @@ deploy:
 	gcloud app deploy app.yml --project abc-nft-368700
 
 run:
-	uvicorn anv.main:app --reload
+	uvicorn anv.main:app --reload --workers 8

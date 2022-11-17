@@ -164,11 +164,11 @@ class GcpNFTSourceRepository(NFTSourceRepository):
             return self._upload_blob(buffer, original_name)
 
     def cache_nft_source(self, nft: models.NftMetadata):
-        log.debug("cache nft source %s", nft)
         uri = nft.image or nft.animation_url
         if not uri:
             return
 
+        log.debug("cache nft source %s", nft)
         uri_hash = get_sha256(uri)
         original_name = f"{uri_hash}_original"
         blob = self.bucket.get_blob(original_name)
@@ -176,7 +176,7 @@ class GcpNFTSourceRepository(NFTSourceRepository):
             log.debug("blob exists. update nft url %s", blob.public_url)
             nft.url = models.NftUrl(original=blob.public_url)
         else:
-            log.debug("blob not exists. store_nft_source url %s", blob.public_url)
+            log.debug("blob not exists. store_nft_source. uri=%s", uri)
             blob = self.store_nft_source(uri, uri_hash)
             if blob:
                 nft.url = models.NftUrl(original=blob.public_url)

@@ -1,4 +1,4 @@
-from anv import api, repository
+from anv import repository
 from anv.api import alchemy, kas, ipfs, moralis
 from anv.service import (
     BinanceNFTService,
@@ -47,30 +47,6 @@ class AppConfig:
         ipfs_proxy = self.get_ipfs_proxy()
         moralis_api = self.get_moralis_api()
         return BinanceNFTService(nft_metadata_repo, ipfs_proxy, moralis_api)
-
-    def get_ethereum_api(self) -> api.EthereumApi:
-        repo = self.get_nft_meta_repository()
-        ipfs = self.get_ipfs_proxy()
-        alchemy_api = self.get_alchemy_api()
-        return api.EthereumApi(repo, ipfs, alchemy_api)
-
-    def get_klaytn_api(self) -> api.KlaytnApi:
-        repo = self.get_nft_meta_repository()
-        ipfs = self.get_ipfs_proxy()
-        kas_api = self.get_kas_api()
-        return api.KlaytnApi(repo, ipfs, kas_api)
-
-    def get_polyfon_api(self) -> api.PolygonApi:
-        repo = self.get_nft_meta_repository()
-        ipfs = self.get_ipfs_proxy()
-        alchemy_api = self.get_alchemy_api()
-        return api.PolygonApi(repo, ipfs, alchemy_api)
-
-    def get_binance_api(self) -> api.BinanceApi:
-        repo = self.get_nft_meta_repository()
-        ipfs = self.get_ipfs_proxy()
-        moralis_api = self.get_moralis_api()
-        return api.BinanceApi(repo, ipfs, moralis_api)
 
     def get_ipfs_proxy(self) -> ipfs.IPFSProxy:
         return ipfs.IPFSProxy()

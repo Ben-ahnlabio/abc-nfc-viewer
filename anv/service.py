@@ -212,11 +212,12 @@ class KlaytnNFTService(NFTServiceProtocol):
         try:
             nft_contract = self._get_nft_contract(nft.contract_address)
             token_data = self._get_nft_by_token_uri(nft.token_uri)
-        except Exception as e:
-            log.exception(
-                "klaytn nft token uri source error. %s. %s",
-                e,
+        except Exception:
+            log.error(
+                "klaytn nft token uri source error. %s. contract_address=%s, token_id=%s",
                 nft.token_uri,
+                nft.contract_address,
+                nft.token_id,
                 extra={
                     "owner": nft.owner,
                     "contract_address": nft.contract_address,
@@ -278,7 +279,7 @@ class KlaytnNFTService(NFTServiceProtocol):
         return json.loads(text)
 
     def _get_json_from_http(self, uri: str) -> NFTTokenJson:
-        r = requests.get(uri, timeout=5, verify=False)
+        r = requests.get(uri, timeout=1, verify=False)
         r.raise_for_status()
         return r.json()
 
