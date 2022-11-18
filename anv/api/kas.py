@@ -1,10 +1,12 @@
-import dataclasses
 import enum
 import json
 import os
 import pathlib
 from typing import List, Optional, TypedDict, Iterable
+import pydantic
 import requests
+
+PAGE_SIZE = 20
 
 
 class KasCredentialJson(TypedDict):
@@ -24,15 +26,13 @@ class TokenKind(enum.Enum):
     NFT = "nft"
 
 
-@dataclasses.dataclass
-class KlaytnContract:
+class KlaytnContract(pydantic.BaseModel):
     address: str
     name: str
     symbol: str
 
 
-@dataclasses.dataclass
-class KlaytnTransferHistory:
+class KlaytnTransferHistory(pydantic.BaseModel):
     transfer_type: TokenKind
     contract: KlaytnContract
     from_address: str
@@ -40,8 +40,7 @@ class KlaytnTransferHistory:
     token_id: str
 
 
-@dataclasses.dataclass
-class KlaytnOwnedNft:
+class KlaytnOwnedNft(pydantic.BaseModel):
     contract_address: str
     token_id: str
     owner: str
@@ -52,9 +51,9 @@ class KlaytnOwnedNft:
     created_at: Optional[int]
 
 
-@dataclasses.dataclass
-class KlaytnNft:
-    pass
+class KlaytnOwndNftResult(pydantic.BaseModel):
+    cursor: Optional[str]
+    owned_nfts: List[KlaytnOwnedNft]
 
 
 class KasApi:
@@ -250,30 +249,41 @@ class KasApi:
         return r.json()
 
     def get_tokens_by_owner(
-        self, chain_id: ChainId, owner: str, kind: Iterable[TokenKind]
-    ) -> List[KlaytnOwnedNft]:
+        self,
+        chain_id: ChainId,
+        owner: str,
+        kind: Iterable[TokenKind],
+        cursor: str = None,
+    ) -> KlaytnOwndNftResult:
         """EOA를 지정하면 해당 EOA가 소유한 토큰 정보를 불러옵니다.
 
         https://refs.klaytnapi.com/ko/tokenhistory/latest#operation/getListOfTokenByOwnerAddress
 
         """
-        result = self.get_tokens_by_owner_raw(chain_id, owner, kind)
-        return [
-            KlaytnOwnedNft(
-                contract_address=item["contractAddress"],
-                token_id=item["extras"]["tokenId"],
-                owner=owner,
-                previous_owner=item["lastTransfer"]["transferFrom"],
-                token_uri=item["extras"]["tokenUri"],
-                transaction_hash=item["lastTransfer"]["transactionHash"],
-                updated_at=item["updatedAt"],
-                created_at=None,  # 지원안함
-            )
-            for item in result["items"]
-        ]
+        result = self.get_tokens_by_owner_raw(chain_id, owner, kind, cursor)
+        return KlaytnOwndNftResult(
+            cursor=result["cursor"],
+            owned_nfts=[
+                KlaytnOwnedNft(
+                    contract_address=item["contractAddress"],
+                    token_id=item["extras"]["tokenId"],
+                    owner=owner,
+                    previous_owner=item["lastTransfer"]["transferFrom"],
+                    token_uri=item["extras"]["tokenUri"],
+                    transaction_hash=item["lastTransfer"]["transactionHash"],
+                    updated_at=item["updatedAt"],
+                    created_at=None,  # 지원안함
+                )
+                for item in result["items"]
+            ],
+        )
 
     def get_tokens_by_owner_raw(
-        self, chain_id: ChainId, owner: str, kind: Iterable[TokenKind]
+        self,
+        chain_id: ChainId,
+        owner: str,
+        kind: Iterable[TokenKind],
+        cursor: str = None,
     ):
         """EOA를 지정하면 해당 EOA가 소유한 토큰 정보를 불러옵니다.
 
@@ -307,7 +317,11 @@ class KasApi:
         headers = {"x-chain-id": chain_id.value}
         session = requests.Session()
         session.auth = (self.access_key_id, self.secret_access_key)
-        params = {"kind": ",".join([token.value for token in kind])}
+        params = {
+            "kind": ",".join([token.value for token in kind]),
+            "cursor": cursor,
+            "size": PAGE_SIZE,
+        }
 
         # https://th-api.klaytnapi.com/v2/account/{address}/token
         url = f"https://th-api.klaytnapi.com/v2/account/{owner}/token"

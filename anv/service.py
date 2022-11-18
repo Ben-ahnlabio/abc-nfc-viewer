@@ -3,6 +3,7 @@ from concurrent import futures
 import json
 import logging
 from typing import List, Optional, Protocol, TypedDict
+import pydantic
 
 import requests
 
@@ -15,7 +16,7 @@ MAX_WORKERS = 5
 
 
 class NFTAttribute(TypedDict):
-    display_type: str
+    display_type: Optional[str]
     trait_type: str
     value: str
 
@@ -30,10 +31,15 @@ class NFTTokenJson(TypedDict):
     external_uri: Optional[str]
 
 
+class OwnedNftResult(pydantic.BaseModel):
+    cursor: Optional[str]
+    nfts: List[models.NftMetadata]
+
+
 class NFTServiceProtocol(Protocol):
     def get_NFTs_by_owner(
-        self, owner: str, resync: bool = False
-    ) -> List[models.NftMetadata]:
+        self, owner: str, cursor: str = None, resync: bool = False
+    ) -> OwnedNftResult:
         pass
 
 
@@ -87,8 +93,8 @@ class AlchemyBaseNFTService(NFTServiceBase):
         }
 
     def get_NFTs_by_owner(
-        self, owner: str, resync: bool = False
-    ) -> List[models.NftMetadata]:
+        self, owner: str, cursor: str = None, resync: bool = False
+    ) -> OwnedNftResult:
         """ether wallet address 로부터 ethereum nft 데이터를 가져온다.
         alchemy api 를 사용해서 wallet 의 nft 를 가져온다.
 
@@ -101,20 +107,24 @@ class AlchemyBaseNFTService(NFTServiceBase):
             owner: wallet address
             resync: repository 데이터 사용
         """
-        owned_nfts = self.alchemy_api.get_NFTs(self.network, owner)
+        owned_nfts_result = self.alchemy_api.get_NFTs(self.network, owner, cursor)
         with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
             if resync:
                 future_list = [
                     exec.submit(self._get_nft_metadata_from_api, nft)
-                    for nft in owned_nfts
+                    for nft in owned_nfts_result.owned_nfts
                 ]
             else:
                 future_list = [
-                    exec.submit(self._get_nft_metadata, nft) for nft in owned_nfts
+                    exec.submit(self._get_nft_metadata, nft)
+                    for nft in owned_nfts_result.owned_nfts
                 ]
             result = [f.result() for f in future_list]
 
-        return [nft for nft in result if nft is not None]
+        return OwnedNftResult(
+            cursor=owned_nfts_result.cursor,
+            nfts=[nft for nft in result if nft is not None],
+        )
 
     def _get_nft_metadata_from_api(
         self, nft: alchemy.AlchemyOwnedNft
@@ -131,7 +141,9 @@ class AlchemyBaseNFTService(NFTServiceBase):
             log.error("get_nft_metadata_from_api error. %s nft=%s", e, nft)
             return None
 
-    def _get_nft_metadata(self, nft: alchemy.AlchemyOwnedNft) -> models.NftMetadata:
+    def _get_nft_metadata(
+        self, nft: alchemy.AlchemyOwnedNft
+    ) -> Optional[models.NftMetadata]:
         metadata = self.repo.get_NFT_metadata(
             self.net_map[self.network.value], nft.contract_address, nft.token_id
         )
@@ -174,23 +186,28 @@ class KlaytnNFTService(NFTServiceBase):
         self.ipfs = ipfs
 
     def get_NFTs_by_owner(
-        self, owner: str, resync: bool = False
-    ) -> List[models.NftMetadata]:
-        owned_nft_list = self.kas.get_tokens_by_owner(
-            kas.ChainId.Cypress, owner, (kas.TokenKind.NFT,)
+        self, owner: str, cursor: str = None, resync: bool = False
+    ) -> OwnedNftResult:
+        owned_nfts_result = self.kas.get_tokens_by_owner(
+            kas.ChainId.Cypress, owner, (kas.TokenKind.NFT,), cursor
         )
+
         with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
             if resync:
                 future_list = [
                     exec.submit(self._get_nft_metadata_from_api, nft)
-                    for nft in owned_nft_list
+                    for nft in owned_nfts_result.owned_nfts
                 ]
             else:
                 future_list = [
-                    exec.submit(self._get_nft_metadata, nft) for nft in owned_nft_list
+                    exec.submit(self._get_nft_metadata, nft)
+                    for nft in owned_nfts_result.owned_nfts
                 ]
             result = [f.result() for f in future_list]
-        return [nft for nft in result if nft is not None]
+        return OwnedNftResult(
+            cursor=owned_nfts_result.cursor,
+            nfts=[nft for nft in result if nft is not None],
+        )
 
     def _get_nft_metadata_from_api(
         self, nft: kas.KlaytnOwnedNft
@@ -216,7 +233,7 @@ class KlaytnNFTService(NFTServiceBase):
         try:
             nft_contract = self._get_nft_contract(nft.contract_address)
             token_data = self._get_nft_by_token_uri(nft.token_uri)
-        except Exception:
+        except Exception as e:
             log.error(
                 "klaytn nft token uri source error. %s. contract_address=%s, token_id=%s",
                 nft.token_uri,
@@ -227,6 +244,7 @@ class KlaytnNFTService(NFTServiceBase):
                     "contract_address": nft.contract_address,
                     "token_id": nft.token_id,
                     "token_uri": nft.token_uri,
+                    "error": e,
                 },
             )
             return None
@@ -322,29 +340,40 @@ class BinanceNFTService(NFTServiceBase):
         self.ipfs = ipfs
 
     def get_NFTs_by_owner(
-        self, owner: str, resync: bool = False
-    ) -> List[models.NftMetadata]:
+        self, owner: str, cursor: str = None, resync: bool = False
+    ) -> OwnedNftResult:
 
-        owned_nft_list = self.moralis_api.get_NFTs(
-            moralis.MorailsNetwork.BinanceMainNet, owner
+        owned_nfts_result = self.moralis_api.get_NFTs(
+            moralis.MorailsNetwork.BinanceMainNet, owner, cursor
         )
 
         result = []
-        for nft in owned_nft_list:
-            metadata = self._get_nft_metadata(nft)
+        for nft in owned_nfts_result.owned_nfts:
+            if resync:
+                metadata = self._get_nft_metadata_from_api(nft)
+            else:
+                metadata = self._get_nft_metadata(nft)
             result.append(metadata)
+
+        # multithread 실행 시 moralis API 가 Too many request 발생함
+
         # with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
         #     if resync:
         #         future_list = [
         #             exec.submit(self._get_nft_metadata_from_api, nft)
-        #             for nft in owned_nft_list
+        #             for nft in owned_nfts_result.owned_nfts
         #         ]
         #     else:
         #         future_list = [
-        #             exec.submit(self._get_nft_metadata, nft) for nft in owned_nft_list
+        #             exec.submit(self._get_nft_metadata, nft)
+        #             for nft in owned_nfts_result.owned_nfts
         #         ]
         #     result = [f.result() for f in future_list]
-        return [nft for nft in result if nft is not None]
+
+        return OwnedNftResult(
+            cursor=owned_nfts_result.cursor,
+            nfts=[nft for nft in result if nft is not None],
+        )
 
     def _get_nft_metadata_from_api(
         self, nft: moralis.MoralisOwnedNft
@@ -442,8 +471,8 @@ class NFTService:
         self.repo = repo
 
     def get_NFTs_by_owner(
-        self, chain: models.Chain, owner: str, resync: bool = False
-    ) -> List[models.NftMetadata]:
+        self, chain: models.Chain, owner: str, cursor: str = None, resync: bool = False
+    ) -> OwnedNftResult:
         nft_srv: NFTServiceProtocol = self.chain_map[chain]
-        nft_metadata = nft_srv.get_NFTs_by_owner(owner, resync)
-        return nft_metadata
+        owned_nfts_result = nft_srv.get_NFTs_by_owner(owner, cursor, resync)
+        return owned_nfts_result

@@ -1,8 +1,7 @@
-import dataclasses
 import logging
 import os
 import enum
-from typing import List, TypedDict, Dict
+from typing import List, Optional
 import pydantic
 import requests
 from anv.models import Chain, NftMetadata, NftAttribute
@@ -13,6 +12,8 @@ log = logging.getLogger(f"anv.{__name__}")
 # https://arb-mainnet.g.alchemy.com/v2/eIgDnqhsy6gAL8Z7wYalt3Te3wBn-Vlz
 # https://polygon-mainnet.g.alchemy.com/v2/HCcxBsPAawcztXq5R7w3zRZb2VeX2ZGl
 
+PAGE_SIZE = 20
+
 
 class AlchemyNet(enum.Enum):
     EthMainNet = "eth-mainnet"
@@ -20,11 +21,15 @@ class AlchemyNet(enum.Enum):
     SolanaMainNet = "solana-mainnet"
 
 
-@dataclasses.dataclass
-class AlchemyOwnedNft:
+class AlchemyOwnedNft(pydantic.BaseModel):
     contract_address: str
     token_id: str
     balance: int
+
+
+class AlchemyOwnedNftResult(pydantic.BaseModel):
+    cursor: Optional[str]
+    owned_nfts: List[AlchemyOwnedNft]
 
 
 class AlchemyApi:
@@ -38,18 +43,23 @@ class AlchemyApi:
             AlchemyNet.SolanaMainNet: self.solana_main_api_key,
         }
 
-    def get_NFTs(self, network: AlchemyNet, owner: str) -> List[AlchemyOwnedNft]:
-        result = self.get_NFTs_raw(network, owner)
-        return [
-            AlchemyOwnedNft(
-                contract_address=nft["contract"]["address"],
-                token_id=nft["id"]["tokenId"],
-                balance=nft["balance"],
-            )
-            for nft in result["ownedNfts"]
-        ]
+    def get_NFTs(
+        self, network: AlchemyNet, owner: str, cursor: str = None
+    ) -> AlchemyOwnedNftResult:
+        result = self.get_NFTs_raw(network, owner, cursor)
+        return AlchemyOwnedNftResult(
+            cursor=result.get("pageKey"),
+            owned_nfts=[
+                AlchemyOwnedNft(
+                    contract_address=nft["contract"]["address"],
+                    token_id=nft["id"]["tokenId"],
+                    balance=nft["balance"],
+                )
+                for nft in result["ownedNfts"]
+            ],
+        )
 
-    def get_NFTs_raw(self, network: AlchemyNet, owner: str):
+    def get_NFTs_raw(self, network: AlchemyNet, owner: str, cursor: str = None):
         """
         https://docs.alchemy.com/reference/getnfts
 
@@ -66,12 +76,18 @@ class AlchemyApi:
                     },
                     "balance": "1"
                 },
-            ]
+            ],
+            "pageKey": "..."
         }
         """
 
         headers = {"accept": "application/json"}
-        params = {"owner": owner, "withMetadata": "false"}
+        params = {
+            "owner": owner,
+            "withMetadata": "false",
+            "pageKey": cursor,
+            "pageSize": PAGE_SIZE,
+        }
         url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key[network]}/getNFTs"
         r = requests.get(url, params=params, headers=headers)
         r.raise_for_status()
@@ -124,7 +140,7 @@ class AlchemyApi:
                     contract_address,
                     token_id,
                 )
-            attributes = []
+                attributes = []
 
         if network == network.EthMainNet:
             chain = Chain.ETHEREUM.value

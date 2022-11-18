@@ -12,7 +12,7 @@ class Chain(enum.Enum):
 
 
 class NftAttribute(pydantic.BaseModel):
-    display_type: str
+    display_type: Optional[str]
     trait_type: str
     value: str
 
@@ -40,7 +40,6 @@ class NftMetadata(pydantic.BaseModel):
     external_url: Optional[str]
     attributes: Optional[List[NftAttribute]]
     token_data: Optional[dict]  # nft 원본 데이터
-    contract_metadata: Optional[dict]  # alchemy optional
     cached: bool = True  # cache 데이터인지 ? API 데이터인지
 
     def __str__(self) -> str:
@@ -48,6 +47,7 @@ class NftMetadata(pydantic.BaseModel):
 
 
 class NftResponse(pydantic.BaseModel):
+    cursor: Optional[str]
     items: Optional[List[NftMetadata]]
 
 

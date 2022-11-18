@@ -8,6 +8,8 @@ import requests
 
 log = logging.getLogger(f"anv.{__name__}")
 
+PAGE_SIZE = 20
+
 
 class MoralisOwnedNft(pydantic.BaseModel):
     token_address: str
@@ -25,6 +27,11 @@ class MoralisOwnedNft(pydantic.BaseModel):
     last_token_uri_sync: Optional[str]
     last_metadata_sync: Optional[str]
     minter_address: Optional[str]
+
+
+class MoralisOwnedNftResult(pydantic.BaseModel):
+    cursor: Optional[str]
+    owned_nfts: List[MoralisOwnedNft]
 
 
 class MoralisNFTMetadata(pydantic.BaseModel):
@@ -69,22 +76,28 @@ class MorailsApi:
         metadata = self.get_NFT_metadata_raw(network, contract_address, token_id)
         return MoralisNFTMetadata.parse_obj(metadata)
 
-    def get_NFTs(self, network: MorailsNetwork, owner: str) -> List[MoralisOwnedNft]:
+    def get_NFTs(
+        self, network: MorailsNetwork, owner: str, cursor: str = None
+    ) -> MoralisOwnedNftResult:
         # TODO: 100 개의 NFT 만 가져온다. page 이동 필요
-        owned_nfts = self.get_NFTs_raw(network, owner)
-        result = []
-        for nft in owned_nfts["result"]:
-            result.append(MoralisOwnedNft.parse_obj(nft))
-        return result
-        # return [MoralisOwnedNft.parse_obj(nft) for nft in owned_nfts]
+        owned_nfts = self.get_NFTs_raw(network, owner, cursor)
+        return MoralisOwnedNftResult(
+            cursor=owned_nfts["cursor"],
+            owned_nfts=[MoralisOwnedNft.parse_obj(nft) for nft in owned_nfts["result"]],
+        )
 
-    def get_NFTs_raw(self, network: MorailsNetwork, owner: str):
+    def get_NFTs_raw(self, network: MorailsNetwork, owner: str, cursor: str = None):
         """
         https://docs.moralis.io/reference/getwalletnfts
         """
 
         headers = {"accept": "application/json", "X-API-Key": self.api_key}
-        params = {"chain": network.value, "format": "decimal"}
+        params = {
+            "chain": network.value,
+            "format": "decimal",
+            "cursor": cursor,
+            "limit": PAGE_SIZE,  # 20
+        }
 
         url = f"https://deep-index.moralis.io/api/v2/{owner}/nft"
         r = requests.get(url, params=params, headers=headers)

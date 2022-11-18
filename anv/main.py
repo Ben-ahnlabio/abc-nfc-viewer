@@ -43,17 +43,20 @@ async def get_nft_by_owner_v1(
     chain: models.Chain,
     owner: str,
     background_tasks: BackgroundTasks,
+    cursor: str = None,
     resync: bool = False,
 ):
     nft_service = app_config.get_nft_service()
-    nft_metadata = nft_service.get_NFTs_by_owner(
-        chain=chain, owner=owner, resync=resync
+    owned_nfts_result = nft_service.get_NFTs_by_owner(
+        chain=chain, owner=owner, cursor=cursor, resync=resync
     )
 
-    task_list = list(filter(lambda nft: nft.source_url is None, nft_metadata))
+    task_list = list(filter(lambda nft: nft.source_url is None, owned_nfts_result.nfts))
     background_tasks.add_task(cache_nft_source_list, task_list)
 
-    return models.NftResponse(items=nft_metadata)
+    return models.NftResponse(
+        items=owned_nfts_result.nfts, cursor=owned_nfts_result.cursor
+    )
 
 
 def cache_nft_source_list(nft_list: List[models.NftMetadata]):

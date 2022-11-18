@@ -27,10 +27,14 @@ class NFTMetadataRespository(Protocol):
     def get_NFT_metadata(
         self, network: models.Chain, contract_address: str, token_id: str
     ) -> Optional[models.NftMetadata]:
-        pass
+        """cache 된 nft metadata 를 repository 로부터 받아온다.
+        cache 데이터가 없으면 return None.
+        """
 
     def set_NFT_metadata(self, data: models.NftMetadata) -> bool:
-        pass
+        """nft metadata 를 저장한다.
+        이미 존재하는 nft metadata 인 경우 chain, contract_address, token_id 기준으로 기존 데이터를 덮어쓴다.
+        """
 
 
 class NFTSourceRepository(Protocol):
@@ -189,7 +193,7 @@ class GcpNFTSourceRepository(NFTSourceRepository):
 
         blob = self.bucket.blob(destination_blob_name)
         file_obj.seek(0)
-        content_type = magic.from_buffer(file_obj.read(1024 * 1024), mime=True)
+        content_type = magic.from_buffer(file_obj.read(), mime=True)
         log.debug("uploading blob...")
         blob.upload_from_file(file_obj, rewind=True, content_type=content_type)
 

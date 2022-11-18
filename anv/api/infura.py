@@ -28,7 +28,6 @@ class InfuraApi:
         'https://nft.api.infura.io/networks/1/nfts/0xa9cb55d05d3351dcd02dd5dc4614e764ce3e1d6e' \
         -H 'accept: application/json' \
         -H 'Authorization: Basic YzIwOTQ3YjY5NWQxNDQyODk2OGM1NjBmNjk5NzZkNzQ6ZjQ0ZGM0YWZlMjVjNGUyOTg3MDVhMTg3OTc3YjU0MDU='
-        
         """
         headers = {"accept": "application/json"}
         session = requests.Session()
