@@ -41,9 +41,6 @@ class NFTServiceBase(NFTServiceProtocol):
     def __init__(self, ipfs: ipfs.IPFSProxy):
         self.ipfs = ipfs
 
-    def _get_link_from_token_data(self, token_data: dict) -> Optional[str]:
-        return token_data.get("external_url")
-
     def _get_token_data_by_uri(self, uri: str) -> NFTTokenJson:
         """uri 에 따른 데이터 parsing
 
@@ -121,7 +118,7 @@ class AlchemyBaseNFTService(NFTServiceBase):
 
     def _get_nft_metadata_from_api(
         self, nft: alchemy.AlchemyOwnedNft
-    ) -> models.NftMetadata:
+    ) -> Optional[models.NftMetadata]:
         try:
             nft_metadata = self.alchemy_api.get_NFT_metadata(
                 self.network, nft.contract_address, nft.token_id
@@ -251,7 +248,7 @@ class KlaytnNFTService(NFTServiceBase):
                 )
                 for attr in token_data.get("attributes", [])
             ],
-            external_url=self._get_link_from_token_data(token_data),
+            external_url=token_data.get("external_url"),
             token_data=token_data,
         )
         self.repo.set_NFT_metadata(nft_metadata)
@@ -390,7 +387,7 @@ class BinanceNFTService(NFTServiceBase):
             animation_url=token_data.get("animation_url"),
             source_url=None,
             attributes=attributes,
-            external_url=self._get_link_from_token_data(token_data),
+            external_url=token_data.get("external_url"),
             token_data=token_data,
             cached=True,
         )

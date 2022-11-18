@@ -131,12 +131,6 @@ class AlchemyApi:
         elif network == network.PolygonMainNet:
             chain = Chain.POLYGON.value
 
-        link = (
-            metadata.get("url")
-            or metadata.get("external_url")
-            or result.get("contractMetadata", {}).get("openSea", {}).get("externalUrl")
-        )
-
         return NftMetadata(
             chain=chain,
             contract_address=contract_address,
@@ -147,7 +141,7 @@ class AlchemyApi:
             image=metadata.get("image"),
             animation_url=metadata.get("animation_url"),
             attributes=attributes,
-            external_url=link,
+            external_url=metadata.get("external_url"),
             token_data=metadata,
             cached=False,
         )
