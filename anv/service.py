@@ -15,6 +15,7 @@ MAX_WORKERS = 5
 
 
 class NFTAttribute(TypedDict):
+    display_type: str
     trait_type: str
     value: str
 
@@ -24,6 +25,9 @@ class NFTTokenJson(TypedDict):
     image: Optional[str]
     description: Optional[str]
     attributes: List[NFTAttribute]
+    url: Optional[str]
+    external_url: Optional[str]
+    external_uri: Optional[str]
 
 
 class NFTServiceProtocol(Protocol):
@@ -36,6 +40,9 @@ class NFTServiceProtocol(Protocol):
 class NFTServiceBase(NFTServiceProtocol):
     def __init__(self, ipfs: ipfs.IPFSProxy):
         self.ipfs = ipfs
+
+    def _get_link_from_token_data(self, token_data: dict) -> Optional[str]:
+        return token_data.get("external_url")
 
     def _get_token_data_by_uri(self, uri: str) -> NFTTokenJson:
         """uri 에 따른 데이터 parsing
@@ -66,7 +73,7 @@ class NFTServiceBase(NFTServiceProtocol):
         return r.json()
 
 
-class AlchemyBaseNFTService(NFTServiceProtocol):
+class AlchemyBaseNFTService(NFTServiceBase):
     def __init__(
         self,
         repo: repository.NFTMetadataRespository,
@@ -158,7 +165,7 @@ class PolygonNFTService(AlchemyBaseNFTService):
         self.network = alchemy.AlchemyNet.PolygonMainNet
 
 
-class KlaytnNFTService(NFTServiceProtocol):
+class KlaytnNFTService(NFTServiceBase):
     def __init__(
         self,
         repo: repository.NFTMetadataRespository,
@@ -237,9 +244,15 @@ class KlaytnNFTService(NFTServiceProtocol):
             animation_url=token_data.get("animation_url"),
             description=token_data.get("description"),
             attributes=[
-                models.NftAttribute(trait_type=attr["trait_type"], value=attr["value"])
+                models.NftAttribute(
+                    trait_type=attr["trait_type"],
+                    value=attr["value"],
+                    display_type=attr.get("display_type"),
+                )
                 for attr in token_data.get("attributes", [])
             ],
+            external_url=self._get_link_from_token_data(token_data),
+            token_data=token_data,
         )
         self.repo.set_NFT_metadata(nft_metadata)
         return nft_metadata
@@ -350,7 +363,9 @@ class BinanceNFTService(NFTServiceBase):
             try:
                 attributes.append(
                     models.NftAttribute(
-                        trait_type=attr["trait_type"], value=attr["value"]
+                        trait_type=attr["trait_type"],
+                        value=attr["value"],
+                        display_type=attr.get("display_type"),
                     )
                 )
             except (TypeError, KeyError) as e:
@@ -373,8 +388,10 @@ class BinanceNFTService(NFTServiceBase):
             description=token_data.get("description"),
             image=token_data.get("image"),
             animation_url=token_data.get("animation_url"),
-            url=None,
+            source_url=None,
             attributes=attributes,
+            external_url=self._get_link_from_token_data(token_data),
+            token_data=token_data,
             cached=True,
         )
         self.repo.set_NFT_metadata(result)

@@ -50,7 +50,7 @@ async def get_nft_by_owner_v1(
         chain=chain, owner=owner, resync=resync
     )
 
-    task_list = list(filter(lambda nft: nft.url is None, nft_metadata))
+    task_list = list(filter(lambda nft: nft.source_url is None, nft_metadata))
     background_tasks.add_task(cache_nft_source_list, task_list)
 
     return models.NftResponse(items=nft_metadata)

@@ -2,7 +2,8 @@ import dataclasses
 import logging
 import os
 import enum
-from typing import List
+from typing import List, TypedDict, Dict
+import pydantic
 import requests
 from anv.models import Chain, NftMetadata, NftAttribute
 
@@ -91,7 +92,7 @@ class AlchemyApi:
             # metadata 에 name 이 없는 경우는 contract name 을 대신한다.
             contract_name = result.get("contractMetadata", {}).get("name", "")
             if contract_name:
-                name = f"[Contract] {contract_name}"
+                name = f"{contract_name}"
             else:
                 name = ""
 
@@ -110,7 +111,11 @@ class AlchemyApi:
         for attr in metadata.get("attributes", []):
             try:
                 attributes.append(
-                    NftAttribute(trait_type=attr["trait_type"], value=attr["value"])
+                    NftAttribute(
+                        trait_type=attr["trait_type"],
+                        value=attr["value"],
+                        display_type=attr.get("display_type"),
+                    )
                 )
             except KeyError as e:
                 log.warning(
@@ -126,6 +131,12 @@ class AlchemyApi:
         elif network == network.PolygonMainNet:
             chain = Chain.POLYGON.value
 
+        link = (
+            metadata.get("url")
+            or metadata.get("external_url")
+            or result.get("contractMetadata", {}).get("openSea", {}).get("externalUrl")
+        )
+
         return NftMetadata(
             chain=chain,
             contract_address=contract_address,
@@ -136,6 +147,8 @@ class AlchemyApi:
             image=metadata.get("image"),
             animation_url=metadata.get("animation_url"),
             attributes=attributes,
+            external_url=link,
+            token_data=metadata,
             cached=False,
         )
 
@@ -148,6 +161,54 @@ class AlchemyApi:
         Args:
             contract_address: contract address
             token_id: token: token id
+
+        return 값은 아래 dict 와 같은 형태
+        >>> {
+            "contract": { "address": "0x2931b181ae9dc8f8109ec41c42480933f411ef94" },
+            "id": {
+                "tokenId": "0x0000000000000000000000000000000000000000000000000000000000000262",
+                "tokenMetadata": { "tokenType": "ERC721" }
+            },
+            "title": "SlimHood #610",
+            "description": "They all wear hoods, but each SlimHood is unique.",
+            "tokenUri": {
+                "raw": "ipfs://QmSuV1wfkV2MrkR52KcbYM2717j5L1EPqLknZKY1cLKxMB/610",
+                "gateway": "https://alchemy.mypinata.cloud/ipfs/QmSuV1wfkV2MrkR52KcbYM2717j5L1EPqLknZKY1cLKxMB/610"
+            },
+            "media": [
+                {
+                "raw": "ipfs://QmPCzRHRgCdPrhNnfG9tPvM5jp18TmoJwBrfkgcyFipe7b/610.gif",
+                "gateway": "https://ipfs.io/ipfs/QmPCzRHRgCdPrhNnfG9tPvM5jp18TmoJwBrfkgcyFipe7b/610.gif"
+                }
+            ],
+            "metadata": {
+                "name": "SlimHood #610",
+                "description": "They all wear hoods, but each SlimHood is unique.",
+                "image": "ipfs://QmPCzRHRgCdPrhNnfG9tPvM5jp18TmoJwBrfkgcyFipe7b/610.gif",
+                "attributes": [
+                { "value": "Orange/Red/White/Green", "trait_type": "Hoodie" },
+                ]
+            },
+            "timeLastUpdated": "2022-11-04T00:20:33.154Z",
+            "contractMetadata": {
+                "name": "SlimHoods",
+                "symbol": "SLMHDS",
+                "totalSupply": "5000",
+                "tokenType": "ERC721",
+                "openSea": {
+                "floorPrice": 0.0678,
+                "collectionName": "SlimHoods",
+                "safelistRequestStatus": "verified",
+                "imageUrl": "https://i.seadn.io/gae/_PXs9iFB8iSm40EfmsjJ_6VHZ7eescWHfZ_PVhinl8AFj26BjTh38iDW1Sr3bR3MU8wsTFD8tbXtaFVZPMRa9XNH-sucajGHNB2gkw?w=500&auto=format",
+                "description": "SlimHoods are a collection of 5000 randomly generated NFTs on the Ethereum blockchain.\r\n\r\nThey all wear hoods, but each SlimHood is unique.\r\n\r\nSlimHoods is the first collection by Random Character Collective.",
+                "externalUrl": "http://slimhoods.com",
+                "twitterUsername": "SlimHoods",
+                "discordUrl": "https://discord.gg/rndm",
+                "lastIngestedAt": "2022-11-01T05:57:33.000Z"
+                }
+            }
+            }
+
         """
 
         headers = {"accept": "application/json"}

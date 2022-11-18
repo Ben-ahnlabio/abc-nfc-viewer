@@ -101,16 +101,6 @@ def disk_repo():
 
 
 @pytest.fixture
-def ethereum_api(disk_repo, ipfs, alchemy_api):
-    yield api.EthereumApi(disk_repo, ipfs, alchemy_api)
-
-
-@pytest.fixture
-def klaytn_api(disk_repo, ipfs, kas_api):
-    yield api.KlaytnApi(disk_repo, ipfs, kas_api)
-
-
-@pytest.fixture
 def infura_env():
     os.environ["INFURA_API_KEY"] = "c20947b695d14428968c560f69976d74"
     os.environ["INFURA_SECRET_KEY"] = "f44dc4afe25c4e298705a187977b5405"
@@ -136,3 +126,18 @@ def web3_obj():
 @pytest.fixture
 def binance_nft_service(disk_repo, ipfs, moralis_api):
     yield service.BinanceNFTService(disk_repo, ipfs, moralis_api)
+
+
+@pytest.fixture
+def ethereum_nft_service(disk_repo, ipfs, alchemy_api):
+    yield service.EthereumNFTService(disk_repo, ipfs, alchemy_api)
+
+
+@pytest.fixture
+def polygon_nft_service(disk_repo, ipfs, alchemy_api):
+    yield service.PolygonNFTService(disk_repo, ipfs, alchemy_api)
+
+
+@pytest.fixture
+def klaytn_nft_service(disk_repo, ipfs, kas_api):
+    yield service.KlaytnNFTService(disk_repo, ipfs, kas_api)

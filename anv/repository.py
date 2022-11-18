@@ -174,13 +174,14 @@ class GcpNFTSourceRepository(NFTSourceRepository):
         blob = self.bucket.get_blob(original_name)
         if blob:
             log.debug("blob exists. update nft url %s", blob.public_url)
-            nft.url = models.NftUrl(original=blob.public_url)
+            nft.source_url = models.NftUrl(original=blob.public_url)
         else:
             log.debug("blob not exists. store_nft_source. uri=%s", uri)
             blob = self.store_nft_source(uri, uri_hash)
             if blob:
-                nft.url = models.NftUrl(original=blob.public_url)
+                nft.source_url = models.NftUrl(original=blob.public_url)
 
+        nft.content_type = blob.content_type
         self.repo.set_NFT_metadata(nft)
 
     def _upload_blob(self, file_obj, destination_blob_name):
@@ -242,10 +243,8 @@ class GcpNFTSourceRepository(NFTSourceRepository):
     ) -> Optional[io.BytesIO]:
         _, data = uri.split(",")
 
-        # log.info(data)
         with io.StringIO() as data_buffer:
             data_buffer.write(data)
             data_buffer.seek(0)
             drawing = svg2rlg(data_buffer)
-            # log.info(drawing)
             renderPM.drawToFile(drawing, buffer, dpi=72 * 10, fmt="PNG")

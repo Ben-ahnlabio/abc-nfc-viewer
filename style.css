@@ -3,6 +3,10 @@
    License: none (public domain)
 */
 
+body{
+    font-size: 12px;
+}
+
 ol, ul {
 	list-style: none;
 }
@@ -24,7 +28,6 @@ ol, ul {
 }
 
 #nftList li p {
-    margin-top: 5px;
 }
 
 div.nft-source {
@@ -34,15 +37,13 @@ div.nft-source {
 }
 
 p.nft-type {
-    font-size: 12px;
 }
 
 p.nft-name {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
 }
 
 p.nft-desc{
-    font-size: 12px;
     line-height: 14px;
 }

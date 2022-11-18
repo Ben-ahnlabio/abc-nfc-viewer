@@ -11,13 +11,15 @@
   <body>
     <h1>NFT</h1>
     <div>
+      <div>
+        <select id="baseUrl">
+          <option>https://abc-nft-368700.de.r.appspot.com</option>
+          <option>http://localhost:8000</option>
+        </select>
+      </div>
+      <h2>address</h2>
       <form>
-        <input
-          id="inputAddress"
-          type="text"
-          placeholder="address"
-          value="0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797"
-        />
+        <input id="inputAddress" type="text" placeholder="address" />
         <select id="selectChain">
           <option>ethereum</option>
           <option>polygon</option>
@@ -60,14 +62,16 @@
           const inputAddress = document.getElementById("inputAddress");
           const chainSelect = document.getElementById("selectChain");
           const nftList = document.getElementById("nftList");
+          const baseUrl = document.getElementById("baseUrl");
           nftList.innerHTML = "";
-          getNfts(inputAddress.value.trim(), chainSelect.value);
+          getNfts(baseUrl.value, inputAddress.value.trim(), chainSelect.value);
         });
       }
 
-      async function getNfts(owner, chain) {
+      async function getNfts(baseUrl, owner, chain) {
         //const url = `https://abc-nft-368700.de.r.appspot.com/v1/nfts/${chain}?owner=${owner}&resync=false`;
-        const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&resync=false`;
+        // const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&resync=false`;
+        const url = `${baseUrl}/v1/nfts/${chain}?owner=${owner}&resync=false`;
         const response = await fetch(url);
         const data = await response.json();
         render(data);
@@ -85,13 +89,21 @@
               item.animation_url !== null
                 ? `<video controls style='width:250px;' src="${item.animation_url}" >`
                 : item.url?.original
-                ? `<img style='width:250px;' alt="${item.url?.original}" src="${item.url?.original}" >`
+                ? `<img style='width:250px;' alt="${item.source_url?.original}" src="${item.source_url?.original}" >`
                 : `<img style='width:250px;' alt="${item.image}" src="${item.image}" >`
             }
           </div>
           <div>
-            <p class="nft-type">${item.token_type} </p>
             <p class="nft-name">${item.name} </p>
+            <p class="nft-type">${item.token_type} </p>
+            <p class="nft-contract-addr">${item.contract_address}</p>
+            <p class="nft-contract-token-id">${item.token_id}</p>
+            ${
+              item.external_url !== null
+                ? `<p class="nft-link"><a href="${item.external_url}">${item.external_url}`
+                : ``
+            }
+          </a></p>
             <p class="nft-desc">${item.description} </p>
           </div>
           `;

@@ -1,8 +1,6 @@
-import dataclasses
 import logging
 import os
 import enum
-from typing import List
 from urllib.parse import urljoin
 import requests
 

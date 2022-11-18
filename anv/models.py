@@ -1,5 +1,5 @@
 import enum
-from typing import List, Optional, TypedDict
+from typing import List, Optional
 
 import pydantic
 
@@ -12,14 +12,17 @@ class Chain(enum.Enum):
 
 
 class NftAttribute(pydantic.BaseModel):
+    display_type: str
     trait_type: str
     value: str
 
 
 class NftUrl(pydantic.BaseModel):
-    small: Optional[str]
-    large: Optional[str]
     original: str
+    w250: Optional[str]
+    w500: Optional[str]
+    w750: Optional[str]
+    w1000: Optional[str]
 
 
 class NftMetadata(pydantic.BaseModel):
@@ -28,12 +31,16 @@ class NftMetadata(pydantic.BaseModel):
     contract_address: str
     token_id: str
     token_type: str
+    source_url: Optional[NftUrl]  # caching 데이터 url
+    content_type: Optional[str]  # caching 데이터의 mime type
     name: str
     description: Optional[str]
     image: Optional[str]  # token uri 상의 NFT image. (http, IPFS, raw data)
     animation_url: Optional[str]  # opensea 의 video, music nft 의 source url
-    url: Optional[NftUrl]
+    external_url: Optional[str]
     attributes: Optional[List[NftAttribute]]
+    token_data: Optional[dict]  # nft 원본 데이터
+    contract_metadata: Optional[dict]  # alchemy optional
     cached: bool = True  # cache 데이터인지 ? API 데이터인지
 
     def __str__(self) -> str:
