@@ -19,7 +19,8 @@
       </div>
       <h2>address</h2>
       <form>
-        <input id="inputAddress" type="text" placeholder="address" />
+        EOA :
+        <input id="inputAddress" type="text" placeholder="EOA Address" />
         <select id="selectChain">
           <option>ethereum</option>
           <option>polygon</option>
@@ -29,27 +30,32 @@
         <input id="btnSubmit" type="submit" value="show NFT" />
       </form>
       <h2>ethereum</h2>
-      <ul class="address-list">
-        <li>0x2488f090656BddB63fe3Bdb506D0D109AaaD93Bb</li>
-        <li>0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797</li>
-        <li>0x0232d1083E970F0c78f56202b9A666B526FA379F</li>
+      <ul class="address-list address-list-ethereum">
+        <li><span>0x2488f090656BddB63fe3Bdb506D0D109AaaD93Bb</span></li>
+        <li><span>0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797</span></li>
+        <li><span>0x0232d1083E970F0c78f56202b9A666B526FA379F</span></li>
+        <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
       </ul>
 
       <h2>klaytn</h2>
-      <ul class="address-list">
-        <li>0x03E5ecA4B61412A5ece56928318d00c3b5567ef8</li>
-        <li>0x9B0582d70744464D7c3Ca4452490Ea2F0a0db6a4</li>
+      <ul class="address-list address-list-klaytn">
+        <li><span>0x03E5ecA4B61412A5ece56928318d00c3b5567ef8</span></li>
+        <li><span>0x9B0582d70744464D7c3Ca4452490Ea2F0a0db6a4</span></li>
+        <li><span>0x745C09006E76f9c357E9de6DF0f28a336fc7CB3C</span></li>
       </ul>
 
       <h2>polygon</h2>
-      <ul class="address-list">
-        <li>0xE36223C79EAA9d1e436ab4348721a1c55B46B7c4</li>
+      <ul class="address-list address-list-polygon">
+        <li><span>0xE36223C79EAA9d1e436ab4348721a1c55B46B7c4</span></li>
+        <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
       </ul>
 
       <h2>binance</h2>
-      <ul class="address-list">
-        <li>0xe0a9e5b59701a776575fdd6257c3f89ae362629a &lt;- 350k nfts</li>
-        <li>0x609306d8890904a0019997585018b70c8c4e1fea</li>
+      <ul class="address-list address-list-binance">
+        <li>
+          <span>0xe0a9e5b59701a776575fdd6257c3f89ae362629a</span>
+        </li>
+        <li><span>0x609306d8890904a0019997585018b70c8c4e1fea</span></li>
       </ul>
 
       <ul id="nftList"></ul>
@@ -63,9 +69,15 @@
           const chainSelect = document.getElementById("selectChain");
           const nftList = document.getElementById("nftList");
           const baseUrl = document.getElementById("baseUrl");
+          const inputCursor = document.getElementById("inputCursor");
           nftList.innerHTML = "";
           getNfts(baseUrl.value, inputAddress.value.trim(), chainSelect.value);
         });
+
+        addAddressClickEvent("ethereum");
+        addAddressClickEvent("polygon");
+        addAddressClickEvent("klaytn");
+        addAddressClickEvent("binance");
       }
 
       async function getNfts(baseUrl, owner, chain) {
@@ -85,13 +97,7 @@
           nftList.append(li);
           li.innerHTML = `
           <div class="nft-source">
-            ${
-              item.animation_url !== null
-                ? `<video controls style='width:250px;' src="${item.animation_url}" >`
-                : item.url?.original
-                ? `<img style='width:250px;' alt="${item.source_url?.original}" src="${item.source_url?.original}" >`
-                : `<img style='width:250px;' alt="${item.image}" src="${item.image}" >`
-            }
+            ${getNftElement(item)}
           </div>
           <div>
             <p class="nft-name">${item.name} </p>
@@ -108,6 +114,41 @@
           </div>
           `;
         });
+      }
+
+      function getNftElement(nftMetadata) {
+        if (
+          nftMetadata.content_type === "video/mp4" ||
+          nftMetadata.content_type === "audio/mp4" ||
+          nftMetadata.content_type === "video/x-m4v"
+        ) {
+          return `<video controls style='height:250px;' src="${nftMetadata.source_url.original}" >`;
+        }
+
+        if (nftMetadata.source_url?.original) {
+          return `<img style='height:250px;' alt="${nftMetadata.source_url?.original}" src="${nftMetadata.source_url?.original}" >`;
+        } else {
+          return `<img style='height:250px;' alt="${nftMetadata.image}" src="${nftMetadata.image}" >`;
+        }
+
+        if (nftMetadata.image === null) {
+          return "";
+        }
+      }
+
+      function addAddressClickEvent(chain) {
+        const addressItem = document.querySelectorAll(
+          `ul.address-list-${chain} li`
+        );
+        Array.from(addressItem).forEach((element) =>
+          element.addEventListener("click", (e) => {
+            const textSpan = element.querySelector("span");
+            const inputAddress = document.getElementById("inputAddress");
+            const selectChain = document.getElementById("selectChain");
+            inputAddress.value = textSpan.innerHTML;
+            selectChain.value = chain;
+          })
+        );
       }
 
       init();

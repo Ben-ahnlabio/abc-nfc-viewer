@@ -34,6 +34,7 @@ div.nft-source {
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 250px;
 }
 
 p.nft-type {
@@ -46,4 +47,16 @@ p.nft-name {
 
 p.nft-desc{
     line-height: 14px;
+}
+
+ul.address-list li{
+    margin-top: 5px;
+}
+
+ul.address-list li:hover {
+    cursor: pointer;
+}
+
+#inputAddress {
+    width: 350px;
 }
