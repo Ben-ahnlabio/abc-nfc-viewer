@@ -94,6 +94,7 @@
         nftList.innerHTML = "";
         data.items.map((item) => {
           const li = document.createElement("li");
+          li.setAttribute("class", "nft-item");
           nftList.append(li);
           li.innerHTML = `
           <div class="nft-source">
@@ -110,7 +111,12 @@
                 : ``
             }
           </a></p>
-            <p class="nft-desc">${item.description} </p>
+          ${
+            item.description !== null
+              ? `<p class="nft-desc">${item.description} </p>`
+              : ""
+          }
+          ${renderAttributes(item)}
           </div>
           `;
         });
@@ -132,6 +138,21 @@
         }
 
         if (nftMetadata.image === null) {
+          return "";
+        }
+      }
+
+      function renderAttributes(item) {
+        if (item.attributes.length > 0) {
+          return `<ul class="attributes-list">
+              ${item.attributes
+                .map(
+                  (attr) =>
+                    `<li class="attributes-item">${attr.trait_type} : ${attr.value}</li>`
+                )
+                .join("")}
+            </ul>`;
+        } else {
           return "";
         }
       }
