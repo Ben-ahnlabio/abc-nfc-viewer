@@ -35,6 +35,7 @@
         <li><span>0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797</span></li>
         <li><span>0x0232d1083E970F0c78f56202b9A666B526FA379F</span></li>
         <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
+        <li><span>0xC6F6c64B87A7Aba3f46D6c717FEe13314da4Ae27</span>(sean)</li>
       </ul>
 
       <h2>klaytn</h2>
@@ -48,6 +49,7 @@
       <ul class="address-list address-list-polygon">
         <li><span>0xE36223C79EAA9d1e436ab4348721a1c55B46B7c4</span></li>
         <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
+        <li><span>0xC6F6c64B87A7Aba3f46D6c717FEe13314da4Ae27</span>(sean)</li>
       </ul>
 
       <h2>binance</h2>
@@ -72,6 +74,7 @@
           const inputCursor = document.getElementById("inputCursor");
           nftList.innerHTML = "";
           getNfts(baseUrl.value, inputAddress.value.trim(), chainSelect.value);
+          nftList.innerHTML = "<li><h3>Loading...</h3></li>";
         });
 
         addAddressClickEvent("ethereum");
@@ -131,10 +134,14 @@
           return `<video controls style='height:250px;' src="${nftMetadata.source_url.original}" >`;
         }
 
-        if (nftMetadata.source_url?.original) {
+        if (nftMetadata.content_type === "image/svg+xml") {
           return `<img style='height:250px;' alt="${nftMetadata.source_url?.original}" src="${nftMetadata.source_url?.original}" >`;
+        }
+
+        if (nftMetadata.source_url !== null && nftMetadata.source_url.h250) {
+          return `<a target="_blank" href="${nftMetadata.source_url.original}"><img style='height:250px;' alt="${nftMetadata.source_url?.h250}" src="${nftMetadata.source_url?.h250}" ></a>`;
         } else {
-          return `<img style='height:250px;' alt="${nftMetadata.image}" src="${nftMetadata.image}" >`;
+          return `<a target="_blank" href="${nftMetadata.image}"><img style='height:250px;' alt="${nftMetadata.image}" src="${nftMetadata.image}" ></a>`;
         }
 
         if (nftMetadata.image === null) {

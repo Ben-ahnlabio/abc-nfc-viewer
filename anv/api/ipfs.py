@@ -55,6 +55,7 @@ class IPFSProxy:
         return self.get_ipfs_binary(ipfs_url, buffer)
 
     def _get_binaray(self, url: str, buffer: io.BytesIO) -> io.BytesIO:
+        url = self._fix_url(url)
         log.debug("downloading... url=%s", url)
         r = requests.get(url, timeout=1)
         r.raise_for_status()
@@ -63,3 +64,9 @@ class IPFSProxy:
             buffer.write(chunk)
         log.debug("download done... url=%s", url)
         return buffer
+
+    def _fix_url(self, url: str):
+        if "/ipfs/ipfs/" in url:
+            return url.replace("/ipfs/ipfs/", "/ipfs/")
+        else:
+            return url

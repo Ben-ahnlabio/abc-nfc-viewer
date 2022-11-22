@@ -460,7 +460,7 @@ class NFTService:
         polygon: NFTServiceProtocol,
         klaytn: NFTServiceProtocol,
         binance: NFTServiceProtocol,
-        repo: repository.NFTSourceRepository,
+        repo: repository.NFTSourceRepositoryProtocal,
     ):
         self.chain_map = {
             models.Chain.ETHEREUM: ethereum,

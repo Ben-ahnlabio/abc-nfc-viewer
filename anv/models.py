@@ -19,10 +19,10 @@ class NftAttribute(pydantic.BaseModel):
 
 class NftUrl(pydantic.BaseModel):
     original: str
-    w250: Optional[str]
-    w500: Optional[str]
-    w750: Optional[str]
-    w1000: Optional[str]
+    h250: Optional[str]
+    h500: Optional[str]
+    h750: Optional[str]
+    h1000: Optional[str]
 
 
 class NftMetadata(pydantic.BaseModel):

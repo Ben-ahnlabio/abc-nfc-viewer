@@ -72,7 +72,7 @@ def test_alchemy_get_contract_metadata(alchemy_api: alchemy.AlchemyApi):
     # hood daisy
     contract_address = "0x2931b181ae9dc8f8109ec41c42480933f411ef94"
     contract_address = "0x039b52db88ae51b86b7ab091fa710082ef60dd7b"
-    contract_address = "0x008C69E0c66EbD4b228D27F2162aD54AB1b7dDE1"
+    contract_address = "0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe"
     result = alchemy_api.get_contract_metadata(
         alchemy.AlchemyNet.EthMainNet, contract_address
     )
