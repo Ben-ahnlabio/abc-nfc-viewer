@@ -53,7 +53,7 @@ ul.address-list li{
     margin-top: 5px;
 }
 
-ul.address-list li:hover {
+ul.address-list li span:hover {
     cursor: pointer;
 }
 
