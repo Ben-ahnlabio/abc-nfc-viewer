@@ -29,6 +29,7 @@ class NftMetadata(pydantic.BaseModel):
     owner: Optional[str]
     chain: str  # ethereum, klaytn, polygon, binance
     contract_address: str
+    contract_name: Optional[str]
     token_id: str
     token_type: str
     source_url: Optional[NftUrl]  # caching 데이터 url

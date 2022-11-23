@@ -252,6 +252,7 @@ class KlaytnNFTService(NFTServiceBase):
         nft_metadata = models.NftMetadata(
             chain=models.Chain.KLAYTN.value,
             contract_address=nft.contract_address,
+            contract_name=nft_contract.name,
             token_id=nft.token_id,
             token_type=nft_contract.type,
             name=token_data["name"],
@@ -356,7 +357,6 @@ class BinanceNFTService(NFTServiceBase):
             result.append(metadata)
 
         # multithread 실행 시 moralis API 가 Too many request 발생함
-
         # with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
         #     if resync:
         #         future_list = [
@@ -384,6 +384,10 @@ class BinanceNFTService(NFTServiceBase):
 
         token_data = self._get_token_data(nft_metadata)
 
+        name = token_data.get("name")
+        if not name:
+            name = nft_metadata.name
+
         attributes = []
         for attr in token_data.get("attributes", []):
             try:
@@ -408,10 +412,11 @@ class BinanceNFTService(NFTServiceBase):
             owner=nft_metadata.owner_of,
             chain=models.Chain.BINANCE.value,
             contract_address=nft.token_address,
+            contract_name=nft_metadata.name,
             token_id=nft.token_id,
             token_type=nft.contract_type,
-            name=nft.name,
-            description=token_data.get("description"),
+            name=name,
+            description=str(token_data.get("description")),
             image=token_data.get("image"),
             animation_url=token_data.get("animation_url"),
             source_url=None,

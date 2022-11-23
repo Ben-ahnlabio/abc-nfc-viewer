@@ -99,16 +99,16 @@ class AlchemyApi:
         result = self.get_NFT_metadata_raw(network, contract_address, token_id)
         metadata = result["metadata"]
         name = metadata.get("name")
+        contract_name = result.get("contractMetadata", {}).get("name", "")
         if not name:
             log.warning(
                 "nft name is not exist. contract_address=%s, token_id=%s",
                 contract_address,
                 token_id,
             )
-            # metadata 에 name 이 없는 경우는 contract name 을 대신한다.
-            contract_name = result.get("contractMetadata", {}).get("name", "")
+            # metadata 에 name 이 없는 경우는 contract_name #{token_id} 형식으로 출력한다.
             if contract_name:
-                name = f"{contract_name}"
+                name = contract_name
             else:
                 name = ""
 
@@ -150,6 +150,7 @@ class AlchemyApi:
         return NftMetadata(
             chain=chain,
             contract_address=contract_address,
+            contract_name=contract_name,
             token_id=token_id,
             token_type=token_type,
             name=name,

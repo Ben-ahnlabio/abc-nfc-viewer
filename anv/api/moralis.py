@@ -119,3 +119,27 @@ class MorailsApi:
         r.raise_for_status()
 
         return r.json()
+
+    def get_collection_metadata_raw(
+        self, network: MorailsNetwork, contract_address: str
+    ):
+        """
+        https://docs.moralis.io/reference/getnftcontractmetadata
+
+        Response Example:
+
+        >>> {
+            "token_address": "0x2d30ca6f024dbc1307ac8a1a44ca27de6f797ec22ef20627a1307243b0ab7d09",
+            "name": "KryptoKitties",
+            "synced_at": "string",
+            "symbol": "RARI",
+            "contract_type": "ERC721"
+        }
+        """
+
+        headers = {"accept": "application/json", "X-API-Key": self.api_key}
+        params = {"chain": network.value}
+
+        url = f"https://deep-index.moralis.io/api/v2/nft/{contract_address}/metadata"
+        r = requests.get(url, params=params, headers=headers)
+        r.raise_for_status()
