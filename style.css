@@ -45,6 +45,11 @@ p.nft-name {
     font-weight: 600;
 }
 
+p.nft-contract-name {
+    font-size: 18px;
+    font-weight: 600;
+}
+
 p.nft-desc{
     line-height: 14px;
 }

@@ -27,6 +27,8 @@
           <option>klaytn</option>
           <option>binance</option>
         </select>
+        <label for="chkResync">resync</label>
+        <input id="chkResync" type="checkbox" />
         <input id="btnSubmit" type="submit" value="show NFT" />
       </form>
       <h2>ethereum</h2>
@@ -59,6 +61,8 @@
       <h2>binance</h2>
       <ul class="address-list address-list-binance">
         <li><span>0x609306d8890904a0019997585018b70c8c4e1fea</span></li>
+        <li><span>0x308318B98B48C1fdfa72efd0BD3F5233c4b45AA9</span></li>
+        <li><span>0xBAE94f68292E0d08297EF69382D54D292E6aeF17</span></li>
         <li>
           <span>0xe0a9e5b59701a776575fdd6257c3f89ae362629a</span> (32k contract)
         </li>
@@ -76,8 +80,14 @@
           const nftList = document.getElementById("nftList");
           const baseUrl = document.getElementById("baseUrl");
           const inputCursor = document.getElementById("inputCursor");
+          const chkResync = document.getElementById("chkResync");
           nftList.innerHTML = "";
-          getNfts(baseUrl.value, inputAddress.value.trim(), chainSelect.value);
+          getNfts(
+            baseUrl.value,
+            inputAddress.value.trim(),
+            chainSelect.value,
+            chkResync.checked ? "true" : "false"
+          );
           nftList.innerHTML = "<li><h3>Loading...</h3></li>";
         });
 
@@ -87,10 +97,10 @@
         addAddressClickEvent("binance");
       }
 
-      async function getNfts(baseUrl, owner, chain) {
+      async function getNfts(baseUrl, owner, chain, resync) {
         //const url = `https://abc-nft-368700.de.r.appspot.com/v1/nfts/${chain}?owner=${owner}&resync=false`;
         // const url = `http://localhost:8000/v1/nfts/${chain}?owner=${owner}&resync=false`;
-        const url = `${baseUrl}/v1/nfts/${chain}?owner=${owner}&resync=false`;
+        const url = `${baseUrl}/v1/nfts/${chain}?owner=${owner}&resync=${resync}`;
         const response = await fetch(url);
         const data = await response.json();
         render(data);
@@ -108,13 +118,14 @@
             ${getNftElement(item)}
           </div>
           <div>
+            <p class="nft-contract-name">${item.contract_name} </p>
             <p class="nft-name">${item.name} </p>
             <p class="nft-type">${item.token_type} </p>
             <p class="nft-contract-addr">${item.contract_address}</p>
             <p class="nft-contract-token-id">${item.token_id}</p>
             ${
               item.external_url !== null
-                ? `<p class="nft-link"><a href="${item.external_url}">${item.external_url}`
+                ? `<p class="nft-link"><a target="_blank" href="${item.external_url}">${item.external_url}`
                 : ``
             }
           </a></p>
