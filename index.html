@@ -13,8 +13,8 @@
     <div>
       <div>
         <select id="baseUrl">
-          <option>http://localhost:8000</option>
           <option>https://abc-nft-368700.de.r.appspot.com</option>
+          <option>http://localhost:8000</option>
         </select>
       </div>
       <h2>address</h2>
@@ -166,7 +166,7 @@
 
       function addAddressClickEvent(chain) {
         const addressItem = document.querySelectorAll(
-          `ul.address-list-${chain} li`
+          `ul.address-list-${chain} li span`
         );
         Array.from(addressItem).forEach((element) =>
           element.addEventListener("click", (e) => {

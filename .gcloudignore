@@ -4,3 +4,5 @@ tests
 .vscode
 __pycache__
 *.pyc
+anv/.data/*.json
+anv/.data/*/*.json
