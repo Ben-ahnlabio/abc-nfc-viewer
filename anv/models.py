@@ -1,5 +1,5 @@
 import enum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import pydantic
 
@@ -14,7 +14,7 @@ class Chain(enum.Enum):
 class NftAttribute(pydantic.BaseModel):
     display_type: Optional[str]
     trait_type: str
-    value: str
+    value: Any
 
 
 class NftUrl(pydantic.BaseModel):

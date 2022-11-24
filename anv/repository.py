@@ -122,7 +122,7 @@ class MongodbRepository(NFTMetadataRespository):
         return models.NftMetadata.parse_obj(result)
 
     def set_NFT_metadata(self, data: models.NftMetadata) -> bool:
-        log.debug("set nft metadata data=%s", data)
+        # log.debug("set nft metadata data=%s", data)
         data.cached = True
         result = self.client.nft.metadata.find_one_and_replace(
             {
@@ -310,6 +310,9 @@ class AWSS3SourceRepository(NFTSourceRepository):
                 buffer.seek(0)
                 content_type = magic.from_buffer(buffer.read(), mime=True)
                 # mime type 으로 확장자를 추측하여 추가함
+
+                # guess_extension 이 webp 확장자를 지원하지 않음
+                mimetypes.add_type("image/webp", ".webp")
                 if content_type:
                     surfix = mimetypes.guess_extension(content_type)
                 else:
