@@ -28,14 +28,7 @@ def test_alchemy_get_NFTs(alchemy_api: alchemy.AlchemyApi):
     # daisy 지갑주소
     result = alchemy_api.get_NFTs(
         alchemy.AlchemyNet.EthMainNet,
-        "0x90ef80035dF87DE9d211de8E8EE7D3cEE9488619",
-    )
-    assert result
-
-    # https://opensea.io/punksOTC2
-    result = alchemy_api.get_NFTs(
-        alchemy.AlchemyNet.EthMainNet,
-        "0x0232d1083E970F0c78f56202b9A666B526FA379F",
+        "0x0E9bC621207f12FF37589a2f234b7D1a920De117",
     )
     assert result
 
@@ -51,11 +44,12 @@ def test_alchemy_get_NFT_metadata(alchemy_api: alchemy.AlchemyApi):
 
 
 def test_alchemy_get_NFT_metadata_raw(alchemy_api: alchemy.AlchemyApi):
-    # result = alchemy_api.get_NFT_metadata_raw(
-    #     alchemy.AlchemyNet.EthMainNet,
-    #     "0x2931b181ae9dc8f8109ec41c42480933f411ef94",
-    #     token_id="0x0000000000000000000000000000000000000000000000000000000000000262",
-    # )
+    result = alchemy_api.get_NFT_metadata_raw(
+        alchemy.AlchemyNet.EthMainNet,
+        "0x2931b181ae9dc8f8109ec41c42480933f411ef94",
+        token_id="0x0000000000000000000000000000000000000000000000000000000000000262",
+    )
+    assert result
 
     result = alchemy_api.get_NFT_metadata_raw(
         alchemy.AlchemyNet.EthMainNet,

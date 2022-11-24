@@ -106,14 +106,3 @@ def test_get_erc_1155_nft_metadata_from_contract_address_using_web3(
 
     uri = contract.functions.uri(tokenId).call()
     assert uri
-
-
-def test_get_nft_transactions(web3_obj: web3.Web3):
-    owner = "0x90ef80035dF87DE9d211de8E8EE7D3cEE9488619"
-
-    latest_block = web3_obj.eth.get_block("latest")
-
-    transaction = web3_obj.eth.get_transaction(
-        "0x2785bcc3be56ad1d05e127c38a3b6fb6e8ffd7f5b6f23a2ffca3d050c726be21"
-    )
-    assert transaction

@@ -1,12 +1,7 @@
-import os
 from anv import repository, models
 
-os.environ["MONGODB_HOST"] = "cluster0.gpvm5.gcp.mongodb.net"
-os.environ["MONGODB_USER"] = "ricepotato"
-os.environ["MONGODB_PASSWORD"] = "qkqhshadk40"
 
-
-def test_get_mongodb_nft_metadata_repo():
+def test_get_mongodb_nft_metadata_repo(env_from_file):
     metadata = {
         "owner": None,
         "chain": "ethereum",

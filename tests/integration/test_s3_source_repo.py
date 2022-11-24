@@ -10,13 +10,8 @@ import magic
 import mypy_boto3_s3
 import pytest
 
-os.environ["AWS_S3_ACCESS_KEY"] = "AKIAZGWINNASJBX6KTCG"
-os.environ["AWS_S3_SECRET_KEY"] = "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"
-os.environ["AWS_S3_REGION_NAME"] = "us-east-2"
-os.environ["AWS_S3_BUCKET_NAME"] = "abc-nft-source"
 
-
-def test_aws_file_upload_s3():
+def test_aws_file_upload_s3(env_from_file):
     bucket_name = "abc-nft-source"
     image_filepath = "/mnt/c/Users/ben/Downloads/nft_original.jpg"
     s3: mypy_boto3_s3.S3Client = boto3.client(
@@ -54,7 +49,7 @@ def test_aws_file_upload_s3():
         assert content_type == "image/jpeg"
 
 
-def test_aws_file_obj_upload_s3():
+def test_aws_file_obj_upload_s3(env_from_file):
     bucket_name = "abc-nft-source"
     image_filepath = "/mnt/c/Users/ben/Downloads/nft_original.jpg"
     s3: mypy_boto3_s3.S3Client = boto3.client(

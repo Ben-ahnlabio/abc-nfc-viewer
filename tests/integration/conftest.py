@@ -1,16 +1,17 @@
-import os
 import json
+import os
 import pathlib
 import tempfile
 from typing import Optional
-from anv import models, api, service
-from anv.api import alchemy, kas, moralis, nft, infura
-from anv.repository import NFTMetadataRespository, DiskRepository
-from anv.api.ipfs import IPFSProxy
 
-
-import web3
+import dotenv
 import pytest
+import web3
+
+from anv import models, service
+from anv.api import alchemy, infura, kas, moralis, nft
+from anv.api.ipfs import IPFSProxy
+from anv.repository import DiskRepository, NFTMetadataRespository
 
 
 @pytest.fixture
@@ -46,46 +47,27 @@ def fake_kas_credential_env():
 
 
 @pytest.fixture
-def alchemy_api_key_env():
-    os.environ["ALCHEMY_API_KEY"] = "O06KHzfPbklzwxDp8Z4KDrxIMmazK85c"
-    os.environ["ALCHEMY_ETHER_MAIN_API_KEY"] = "O06KHzfPbklzwxDp8Z4KDrxIMmazK85c"
-    os.environ["ALCHEMY_POLYGON_MAIN_API_KEY"] = "HCcxBsPAawcztXq5R7w3zRZb2VeX2ZGl"
-    os.environ["ALCHEMY_SOLANA_MAIN_API_KEY"] = "EE1vFxSrdfHZClzRQo1tWg_IuyHqf7xu"
+def env_from_file():
+    yield dotenv.load_dotenv("anv/.env")
 
 
 @pytest.fixture
-def moralis_api_key_env():
-    os.environ[
-        "MORALIS_API_KEY"
-    ] = "WR7xp7atOQ1XlFLywNisHfWUSLZT3EYnr13AiiLgVKOJCVlU1cxOFpqWrZorpSsF"
-
-
-@pytest.fixture
-def alchemy_api(alchemy_api_key_env):
+def alchemy_api(env_from_file):
     yield alchemy.AlchemyApi()
 
 
 @pytest.fixture
-def kas_env():
-    os.environ["KAS_ACCESS_KEY_ID"] = "KASKOTSLZ89LS5RRCULWECVW"
-    os.environ["KAS_SECRET_ACCESS_KEY"] = "__9FCFEi_IOdydovTLyMAO3Nt2XRIUf3m2pt9IZJ"
-    os.environ[
-        "KAS_AUTHORIZATION"
-    ] = "Basic S0FTS09UU0xaODlMUzVSUkNVTFdFQ1ZXOl9fOUZDRkVpX0lPZHlkb3ZUTHlNQU8zTnQyWFJJVWYzbTJwdDlJWko="
-
-
-@pytest.fixture
-def kas_api(kas_env):
+def kas_api(env_from_file):
     yield kas.KasApi()
 
 
 @pytest.fixture
-def moralis_api(moralis_api_key_env):
+def moralis_api(env_from_file):
     yield moralis.MorailsApi()
 
 
 @pytest.fixture
-def nft_api(alchemy_api):
+def nft_api(env_from_file):
     class Repo(NFTMetadataRespository):
         def get_NFT_metadata(
             self, network: models.Chain, contract_address: str, token_id: str
@@ -101,14 +83,7 @@ def disk_repo():
 
 
 @pytest.fixture
-def infura_env():
-    os.environ["INFURA_API_KEY"] = "c20947b695d14428968c560f69976d74"
-    os.environ["INFURA_SECRET_KEY"] = "f44dc4afe25c4e298705a187977b5405"
-    yield
-
-
-@pytest.fixture
-def infura_api(infura_env):
+def infura_api(env_from_file):
     yield infura.InfuraApi()
 
 
