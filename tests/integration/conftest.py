@@ -8,10 +8,10 @@ import dotenv
 import pytest
 import web3
 
-from anv import models, service
+from anv import models, service, aws_s3
 from anv.api import alchemy, infura, kas, moralis, nft
 from anv.api.ipfs import IPFSProxy
-from anv.repository import DiskRepository, NFTMetadataRespository
+from anv.repository import DiskRepository, NFTMetadataRespository, AWSS3SourceRepository
 
 
 @pytest.fixture
@@ -116,3 +116,13 @@ def polygon_nft_service(disk_repo, ipfs, alchemy_api):
 @pytest.fixture
 def klaytn_nft_service(disk_repo, ipfs, kas_api):
     yield service.KlaytnNFTService(disk_repo, ipfs, kas_api)
+
+
+@pytest.fixture
+def aws_s3_obj(env_from_file):
+    yield aws_s3.AWSS3Storage()
+
+
+@pytest.fixture
+def s3_src_repo(aws_s3_obj, disk_repo, ipfs):
+    yield AWSS3SourceRepository(aws_s3_obj, disk_repo, ipfs)

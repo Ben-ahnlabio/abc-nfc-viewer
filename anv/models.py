@@ -23,6 +23,7 @@ class NftUrl(pydantic.BaseModel):
     h500: Optional[str]
     h750: Optional[str]
     h1000: Optional[str]
+    content_type: Optional[str]
 
 
 class NftMetadata(pydantic.BaseModel):

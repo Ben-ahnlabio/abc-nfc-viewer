@@ -1,4 +1,4 @@
-from anv import repository
+from anv import repository, aws_s3
 from anv.api import alchemy, kas, ipfs, moralis
 from anv.service import (
     BinanceNFTService,
@@ -63,7 +63,8 @@ class AppConfig:
         repo = self.get_nft_meta_repository()
         ipfs = self.get_ipfs_proxy()
         # return repository.GcpNFTSourceRepository(repo, ipfs)
-        return repository.AWSS3SourceRepository(repo, ipfs)
+        s3_storage = aws_s3.AWSS3Storage()
+        return repository.AWSS3SourceRepository(s3_storage, repo, ipfs)
 
     def get_alchemy_api(self) -> alchemy.AlchemyApi:
         return alchemy.AlchemyApi()

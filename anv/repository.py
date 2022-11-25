@@ -9,7 +9,6 @@ from typing import Optional, Protocol
 from urllib.parse import urljoin
 
 import boto3
-import botocore
 import magic
 import mypy_boto3_s3
 import pymongo
@@ -18,7 +17,7 @@ from google.cloud import storage
 from reportlab.graphics import renderPM
 from svglib.svglib import svg2rlg
 
-from anv import models
+from anv import models, aws_s3
 from anv.api import ipfs
 
 log = logging.getLogger(f"anv.{__name__}")
@@ -266,9 +265,15 @@ class GcpNFTSourceRepository(NFTSourceRepository):
 
 
 class AWSS3SourceRepository(NFTSourceRepository):
-    def __init__(self, repo: NFTMetadataRespository, ipfs: ipfs.IPFSProxy):
+    def __init__(
+        self,
+        s3_storage: aws_s3.AWSS3Storage,
+        repo: NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+    ):
         self.repo = repo
         self.ipfs = ipfs
+        self.s3_storage = s3_storage
         self.s3: mypy_boto3_s3.S3Client = boto3.client(
             service_name="s3",
             region_name=os.getenv("AWS_S3_REGION_NAME"),
@@ -287,69 +292,45 @@ class AWSS3SourceRepository(NFTSourceRepository):
             return
 
         log.debug("cache nft source %s", nft)
-        uri_hash = get_sha256(uri)
+        nft_url = self._cache_uri_source(uri)
+        nft.source_url = nft_url
+        nft.content_type = nft_url.content_type
+        self.repo.set_NFT_metadata(nft)
 
-        objs = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=uri_hash)
-        if objs.get("Contents", None):
-            obj = self.s3.get_object(
-                Bucket=self.bucket_name, Key=objs["Contents"][0]["Key"]
-            )
+    def _cache_uri_source(self, uri: str):
+        # surfix = ""  # AWS s3 의 key 에 들어갈 확장자
+        uri_hash = get_sha256(uri)
+        obj = self.s3_storage.find_first_object(uri_hash)
+
+        # guess_extension 이 webp 확장자를 지원하지 않음
+        mimetypes.add_type("image/webp", ".webp")
+        if obj:
             content_type = (
                 obj.get("ResponseMetadata", {})
                 .get("HTTPHeaders", {})
                 .get("content-type")
             )
+            surfix = mimetypes.guess_extension(str(content_type))
         else:
-            log.warning(
-                "cache nft source s3 object not exist. store image nft=%s, key=%s",
-                nft,
-                uri_hash,
-            )
             with io.BytesIO() as buffer:
                 self._get_binary_from_uri(uri, buffer)
                 buffer.seek(0)
                 content_type = magic.from_buffer(buffer.read(), mime=True)
-                # mime type 으로 확장자를 추측하여 추가함
-
-                # guess_extension 이 webp 확장자를 지원하지 않음
-                mimetypes.add_type("image/webp", ".webp")
-                if content_type:
-                    surfix = mimetypes.guess_extension(content_type)
-                else:
-                    surfix = ""
-                log.debug("content_type from buffer %s", content_type)
-
-                # mime type 으로 확장자 추측이 가능한 경우 확장자를 붙임
-                if surfix:
-                    new_key = f"{uri_hash}{surfix}"
-                else:
-                    new_key = uri_hash
-
-                buffer.seek(0)
-                self.s3.upload_fileobj(
-                    Fileobj=buffer,
-                    Bucket=self.bucket_name,
-                    Key=new_key,
-                    ExtraArgs={"ContentType": content_type},
-                )
-                log.debug(
-                    "[UPLOADED] File key=%s content_type=%s",
-                    new_key,
-                    content_type,
-                )
-
-        if content_type:
-            surfix = mimetypes.guess_extension(str(content_type))
-        else:
-            surfix = ""
+                surfix = mimetypes.guess_extension(str(content_type))
+                new_key = f"{uri_hash}{surfix}"
+                self._upload_object(buffer, new_key, content_type)
 
         nft_url = models.NftUrl(original=urljoin(self.base_url, f"{uri_hash}{surfix}"))
+        # image 인 경우 lambda 에 의해 resize 되므로 resize url 추가
         if content_type and content_type.startswith("image/"):
             nft_url.h250 = urljoin(self.resize_base_url, f"{uri_hash}_h250{surfix}")
             nft_url.h500 = urljoin(self.resize_base_url, f"{uri_hash}_h500{surfix}")
             nft_url.h750 = urljoin(self.resize_base_url, f"{uri_hash}_h750{surfix}")
             nft_url.h1000 = urljoin(self.resize_base_url, f"{uri_hash}_h1000{surfix}")
 
-        nft.source_url = nft_url
-        nft.content_type = content_type
-        self.repo.set_NFT_metadata(nft)
+        nft_url.content_type = content_type
+        return nft_url
+
+    def _upload_object(self, buffer, key: str, content_type: str):
+        buffer.seek(0)
+        self.s3_storage.upload_object(buffer, key, {"ContentType": content_type})
