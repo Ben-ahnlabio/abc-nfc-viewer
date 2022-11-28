@@ -14,13 +14,13 @@ PAGE_SIZE = 20
 class MoralisOwnedNft(pydantic.BaseModel):
     token_address: str
     token_id: str
-    owner_of: str
-    block_number: str
-    block_number_minted: str
-    token_hash: str
-    amount: str
-    contract_type: str
-    name: str
+    owner_of: Optional[str]
+    block_number: Optional[str]
+    block_number_minted: Optional[str]
+    token_hash: Optional[str]
+    amount: Optional[str]
+    contract_type: Optional[str]
+    name: Optional[str]
     symbol: Optional[str]
     token_uri: Optional[str]
     metadata: Optional[str]

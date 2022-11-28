@@ -61,11 +61,8 @@ async def get_nft_by_owner_v1(
 
 def cache_nft_source_list(nft_list: List[models.NftMetadata]):
     """nft metadata 의 url 항목이 None 이면 cache 작업을 시작한다."""
-    repo = app_config.get_nft_src_repository()
     with futures.ThreadPoolExecutor(max_workers=5) as exec:
-        future_to_nft = {
-            exec.submit(repo.cache_nft_source, nft): nft for nft in nft_list
-        }
+        future_to_nft = {exec.submit(cache_nft_source, nft): nft for nft in nft_list}
         for f, nft in future_to_nft.items():
             try:
                 _ = f.result()

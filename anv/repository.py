@@ -41,7 +41,7 @@ class NFTMetadataRespository(Protocol):
         """
 
 
-class NFTSourceRepositoryProtocal(Protocol):
+class NFTSourceRepositoryProtocol(Protocol):
     """NFT source(image, video) 를 caching 하는 저장소.
     NFT 의 token uri 값을 보내면 caching 된 URL(models.NftUrl) return
     """
@@ -147,7 +147,7 @@ class MongodbRepository(NFTMetadataRespository):
         )
 
 
-class DiskNFSSourceRepository(NFTSourceRepositoryProtocal):
+class DiskNFSSourceRepository(NFTSourceRepositoryProtocol):
     def __init__(self):
         self.repo_dir = pathlib.Path(__file__).parent / ".data"
 
@@ -158,7 +158,19 @@ class DiskNFSSourceRepository(NFTSourceRepositoryProtocal):
         return uri
 
 
-class NFTSourceRepository(NFTSourceRepositoryProtocal):
+class NFTSourceRepository(NFTSourceRepositoryProtocol):
+    __instance = None
+
+    @classmethod
+    def __getInstance(cls):
+        return cls.__instance
+
+    @classmethod
+    def instance(cls, *args, **kargs):
+        cls.__instance = cls(*args, **kargs)
+        cls.instance = cls.__getInstance
+        return cls.__instance
+
     def __init__(self, repo: NFTMetadataRespository, ipfs: ipfs.IPFSProxy):
         self.repo = repo
         self.ipfs = ipfs
@@ -287,6 +299,7 @@ class AWSS3SourceRepository(NFTSourceRepository):
         )
 
     def cache_nft_source(self, nft: models.NftMetadata):
+        """AWS S3 에 NFT source 를 저장."""
         uri = nft.image or nft.animation_url
         if not uri:
             return
@@ -298,11 +311,15 @@ class AWSS3SourceRepository(NFTSourceRepository):
         self.repo.set_NFT_metadata(nft)
 
     def _cache_uri_source(self, uri: str):
+        """S3 에 저장 시 content_type 에 따른 확장자를 넣어야 함
+        resize lambda function 에서는 파일의 내용을 참고하지 않고
+        확장자만으로 content_type 을 결정함(mimetype 사용)
+        """
         # surfix = ""  # AWS s3 의 key 에 들어갈 확장자
         uri_hash = get_sha256(uri)
         obj = self.s3_storage.find_first_object(uri_hash)
 
-        # guess_extension 이 webp 확장자를 지원하지 않음
+        # guess_extension 이 webp 확장자를 지원하지 않으므로 추가
         mimetypes.add_type("image/webp", ".webp")
         if obj:
             content_type = (
@@ -311,12 +328,16 @@ class AWSS3SourceRepository(NFTSourceRepository):
                 .get("content-type")
             )
             surfix = mimetypes.guess_extension(str(content_type))
+            if surfix is None:
+                surfix = ""
         else:
             with io.BytesIO() as buffer:
                 self._get_binary_from_uri(uri, buffer)
                 buffer.seek(0)
                 content_type = magic.from_buffer(buffer.read(), mime=True)
                 surfix = mimetypes.guess_extension(str(content_type))
+                if surfix is None:
+                    surfix = ""
                 new_key = f"{uri_hash}{surfix}"
                 self._upload_object(buffer, new_key, content_type)
 

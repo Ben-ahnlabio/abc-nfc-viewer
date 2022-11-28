@@ -24,6 +24,7 @@ class TokenKind(enum.Enum):
     KLAY = "klay"
     FT = "ft"
     NFT = "nft"
+    MT = "mt"
 
 
 class KlaytnContract(pydantic.BaseModel):
@@ -43,17 +44,31 @@ class KlaytnTransferHistory(pydantic.BaseModel):
 class KlaytnOwnedNft(pydantic.BaseModel):
     contract_address: str
     token_id: str
-    owner: str
-    previous_owner: str
-    token_uri: str
-    transaction_hash: str
-    updated_at: int
+    owner: Optional[str]
+    previous_owner: Optional[str]
+    token_uri: Optional[str]
+    transaction_hash: Optional[str]
+    updated_at: Optional[int]
     created_at: Optional[int]
 
 
 class KlaytnOwndNftResult(pydantic.BaseModel):
     cursor: Optional[str]
     owned_nfts: List[KlaytnOwnedNft]
+
+
+KlaytnNftResultTypeDef = TypedDict(
+    "KlaytnNftResultTypeDef",
+    {
+        "tokenId": str,
+        "owner": str,
+        "previousOwner": str,
+        "tokenUri": str,
+        "transactionHash": str,
+        "createdAt": int,
+        "updatedAt": int,
+    },
+)
 
 
 class KasApi:
@@ -166,7 +181,32 @@ class KasApi:
         r.raise_for_status()
         return r.json()
 
-    def get_nft(self, chain_id: ChainId, nft_contract: str, token_id: str):
+    def get_ft(self, chain_id: ChainId, contract_address: str):
+        """
+        https://docs.klaytnapi.com/tutorial/token-history-api/th-api-contract#ft-1
+
+        특정 FT 컨트랙트 정보를 조회합니다.
+        FT 컨트랙트란 Klaytn에 배포되는 스마트 컨트랙트의 일종입니다.
+        이 컨트랙트는 대체 가능 토큰(Fungible Token, FT)을 발행, 삭제, 전송하는 기능을 제공합니다.
+
+        curl --location --request GET "https://th-api.klaytnapi.com/v2/contract/ft/0xbe7377db700664331beb28023cfbd46de079efac" \
+        --header "x-chain-id: {chain-id}" \
+        -u {access-key-id}:{secret-access-key}
+        
+        """
+
+        headers = {"x-chain-id": chain_id.value}
+        session = requests.Session()
+        session.auth = (self.access_key_id, self.secret_access_key)
+
+        url = f"https://th-api.klaytnapi.com/v2/contract/ft/{contract_address}"
+        r = session.get(url, headers=headers)
+        r.raise_for_status()
+        return r.json()
+
+    def get_nft(
+        self, chain_id: ChainId, nft_contract: str, token_id: str
+    ) -> KlaytnNftResultTypeDef:
         """
         https://docs.klaytnapi.com/tutorial/token-history-api/th-api-token
         https://refs.klaytnapi.com/ko/tokenhistory/latest#operation/getNftById

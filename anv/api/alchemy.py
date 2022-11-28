@@ -24,7 +24,7 @@ class AlchemyNet(enum.Enum):
 class AlchemyOwnedNft(pydantic.BaseModel):
     contract_address: str
     token_id: str
-    balance: int
+    balance: Optional[int]
 
 
 class AlchemyOwnedNftResult(pydantic.BaseModel):
@@ -240,6 +240,28 @@ class AlchemyApi:
         headers = {"accept": "application/json"}
         params = {"contractAddress": contract_address}
         url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key[network]}/getContractMetadata"
+
+        r = requests.get(url, params=params, headers=headers)
+        r.raise_for_status()
+        return r.json()
+
+    def get_contracts_for_owner(
+        self, network: AlchemyNet, owner: str, cursor: str = None
+    ):
+        """
+        https://docs.alchemy.com/reference/getcontractsforowner
+
+        Args:
+            owner: owner address
+        """
+
+        headers = {"accept": "application/json"}
+        params = {
+            "owner": owner,
+            "pageKey": cursor,
+            "pageSize": PAGE_SIZE,
+        }
+        url = f"https://{network.value}.g.alchemy.com/nft/v2/{self.api_key[network]}/getContractsForOwner"
 
         r = requests.get(url, params=params, headers=headers)
         r.raise_for_status()
