@@ -3,10 +3,10 @@ import logging
 from typing import List
 
 import dotenv
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from anv import config, models
+from anv import config, models, service, repository
 
 log = logging.getLogger("anv")
 log.setLevel(logging.DEBUG)
@@ -52,17 +52,50 @@ async def get_nft_by_owner_v1(
     )
 
     task_list = list(filter(lambda nft: nft.source_url is None, owned_nfts_result.nfts))
-    background_tasks.add_task(cache_nft_source_list, task_list)
+    repo = app_config.get_nft_src_repository()
+    background_tasks.add_task(cache_nft_source_list, task_list, repo)
 
     return models.NftResponse(
         items=owned_nfts_result.nfts, cursor=owned_nfts_result.cursor
     )
 
 
-def cache_nft_source_list(nft_list: List[models.NftMetadata]):
+@app.get(
+    "/v1/nfts/{chain}/{contract_address}/{token_id}", response_model=models.NftMetadata
+)
+async def get_nft_by_contract_token_id_v1(
+    chain: models.Chain,
+    contract_address: str,
+    token_id: str,
+    background_tasks: BackgroundTasks,
+    resync: bool = False,
+):
+    try:
+        nft_service = app_config.get_nft_service()
+        nft = nft_service.get_NFT_by_contract_token_id(
+            chain=chain,
+            contract_address=contract_address,
+            token_id=token_id,
+            resync=resync,
+        )
+        if nft:
+            repo = app_config.get_nft_src_repository()
+            background_tasks.add_task(cache_nft_source, nft, repo)
+            return nft
+        else:
+            raise HTTPException(status_code=404, detail="not found.")
+    except service.NFTServiceError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def cache_nft_source_list(
+    nft_list: List[models.NftMetadata], repo: repository.NFTSourceRepositoryProtocol
+):
     """nft metadata 의 url 항목이 None 이면 cache 작업을 시작한다."""
     with futures.ThreadPoolExecutor(max_workers=5) as exec:
-        future_to_nft = {exec.submit(cache_nft_source, nft): nft for nft in nft_list}
+        future_to_nft = {
+            exec.submit(cache_nft_source, nft, repo): nft for nft in nft_list
+        }
         for f, nft in future_to_nft.items():
             try:
                 _ = f.result()
@@ -70,8 +103,9 @@ def cache_nft_source_list(nft_list: List[models.NftMetadata]):
                 log.error("cache nft source error. %s. nft=%s", e, nft)
 
 
-def cache_nft_source(nft: models.NftMetadata):
-    repo = app_config.get_nft_src_repository()
+def cache_nft_source(
+    nft: models.NftMetadata, repo: repository.NFTSourceRepositoryProtocol
+):
     repo.cache_nft_source(nft)
 
 

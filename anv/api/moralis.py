@@ -1,7 +1,7 @@
 import enum
 import logging
 import os
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 import pydantic
 import requests
@@ -86,7 +86,9 @@ class MorailsApi:
             owned_nfts=[MoralisOwnedNft.parse_obj(nft) for nft in owned_nfts["result"]],
         )
 
-    def get_NFTs_raw(self, network: MorailsNetwork, owner: str, cursor: str = None):
+    def get_NFTs_raw(
+        self, network: MorailsNetwork, owner: str, cursor: str = None
+    ) -> dict:
         """
         https://docs.moralis.io/reference/getwalletnfts
         """
@@ -100,10 +102,7 @@ class MorailsApi:
         }
 
         url = f"https://deep-index.moralis.io/api/v2/{owner}/nft"
-        r = requests.get(url, params=params, headers=headers)
-        r.raise_for_status()
-
-        return r.json()
+        return self._api_request("get", url, params=params, headers=headers)
 
     def get_NFT_metadata_raw(
         self, network: MorailsNetwork, contract_address: str, token_id: str
@@ -115,10 +114,7 @@ class MorailsApi:
         params = {"chain": network.value}
 
         url = f"https://deep-index.moralis.io/api/v2/nft/{contract_address}/{token_id}"
-        r = requests.get(url, params=params, headers=headers)
-        r.raise_for_status()
-
-        return r.json()
+        return self._api_request("get", url, params=params, headers=headers)
 
     def get_collection_metadata_raw(
         self, network: MorailsNetwork, contract_address: str
@@ -141,5 +137,25 @@ class MorailsApi:
         params = {"chain": network.value}
 
         url = f"https://deep-index.moralis.io/api/v2/nft/{contract_address}/metadata"
-        r = requests.get(url, params=params, headers=headers)
-        r.raise_for_status()
+        return self._api_request("get", url, params=params, headers=headers)
+
+    def _api_request(
+        self,
+        method: Literal["get", "put", "post"],
+        url: str,
+        headers: dict,
+        params: dict = None,
+    ) -> dict:
+
+        try:
+            with requests.Session() as session:
+                r = session.request(method, url, params=params, headers=headers)
+                r.raise_for_status()
+                return r.json()
+        except requests.exceptions.HTTPError as e:
+            log.warning(f"KAS API request failed: {e}")
+            raise MoralisApiError(e)
+
+
+class MoralisApiError(Exception):
+    pass

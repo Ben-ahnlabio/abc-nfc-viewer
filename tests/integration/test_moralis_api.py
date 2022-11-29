@@ -1,4 +1,6 @@
 import json
+
+import pytest
 from anv.api import moralis
 
 
@@ -22,3 +24,13 @@ def test_get_moralis_get_nft_metadata(moralis_api: moralis.MorailsApi):
     assert result
     with open("moralis_nft_metadata.json", "w") as f:
         f.write(json.dumps(result))
+
+
+def test_get_moralis_get_nft_metadata_invalid_token_id(moralis_api: moralis.MorailsApi):
+    contract_address = "0x25Dc4d9e2598c21DC020aa7B741377eCde971C2f"
+    token_id = "1234567890"
+
+    with pytest.raises(moralis.MoralisApiError):
+        moralis_api.get_NFT_metadata_raw(
+            moralis.MorailsNetwork.BinanceMainNet, contract_address, token_id
+        )

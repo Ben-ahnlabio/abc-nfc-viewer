@@ -32,6 +32,14 @@ class AlchemyOwnedNftResult(pydantic.BaseModel):
     owned_nfts: List[AlchemyOwnedNft]
 
 
+class AlchemyApiError(Exception):
+    pass
+
+
+class AlchemyApiValueError(AlchemyApiError):
+    pass
+
+
 class AlchemyApi:
     def __init__(self):
         self.ether_main_api_key = os.getenv("ALCHEMY_ETHER_MAIN_API_KEY")
@@ -97,7 +105,17 @@ class AlchemyApi:
         self, network: AlchemyNet, contract_address: str, token_id: str
     ) -> NftMetadata:
         result = self.get_NFT_metadata_raw(network, contract_address, token_id)
+
+        error = result.get("error", None)
+        if error is not None:
+            raise AlchemyApiError(error)
+
         metadata = result["metadata"]
+        if not isinstance(metadata, dict):
+            raise AlchemyApiValueError(
+                f"api metadata value error. {contract_address=}, {token_id=}"
+            )
+
         name = metadata.get("name")
         contract_name = result.get("contractMetadata", {}).get("name", "")
         if not name:
@@ -106,7 +124,7 @@ class AlchemyApi:
                 contract_address,
                 token_id,
             )
-            # metadata 에 name 이 없는 경우는 contract_name #{token_id} 형식으로 출력한다.
+            # metadata 에 name 이 없는 경우는 contract_name 을 출력한다.
             if contract_name:
                 name = contract_name
             else:

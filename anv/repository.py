@@ -137,13 +137,15 @@ class MongodbRepository(NFTMetadataRespository):
         return True
 
     def _get_mongo_client(self) -> pymongo.MongoClient:
+        mongodb_uri = os.environ.get("MONGODB_URI_HOST")
         host = os.environ.get("MONGODB_HOST")
         user = os.environ.get("MONGODB_USER")
         password = os.environ.get("MONGODB_PASSWORD")
+        ssl = os.environ.get("MONGODB_SSL") == "true"
 
-        connection_string = f"mongodb+srv://{user}:{password}@{host}"
+        connection_string = f"{mongodb_uri}://{user}:{password}@{host}"
         return pymongo.MongoClient(
-            connection_string, ssl=True, tlsAllowInvalidCertificates=True
+            connection_string, ssl=ssl, tlsAllowInvalidCertificates=True
         )
 
 
@@ -159,18 +161,6 @@ class DiskNFSSourceRepository(NFTSourceRepositoryProtocol):
 
 
 class NFTSourceRepository(NFTSourceRepositoryProtocol):
-    __instance = None
-
-    @classmethod
-    def __getInstance(cls):
-        return cls.__instance
-
-    @classmethod
-    def instance(cls, *args, **kargs):
-        cls.__instance = cls(*args, **kargs)
-        cls.instance = cls.__getInstance
-        return cls.__instance
-
     def __init__(self, repo: NFTMetadataRespository, ipfs: ipfs.IPFSProxy):
         self.repo = repo
         self.ipfs = ipfs
@@ -322,6 +312,7 @@ class AWSS3SourceRepository(NFTSourceRepository):
         # guess_extension 이 webp 확장자를 지원하지 않으므로 추가
         mimetypes.add_type("image/webp", ".webp")
         if obj:
+            obj = self.s3_storage.get_object(obj["Key"])
             content_type = (
                 obj.get("ResponseMetadata", {})
                 .get("HTTPHeaders", {})

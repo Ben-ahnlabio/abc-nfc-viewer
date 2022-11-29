@@ -41,6 +41,9 @@ class AWSS3Storage:
         except IndexError:
             return None
 
+    def get_object(self, key: str):
+        return self.s3.get_object(Bucket=self.bucket_name, Key=key)
+
     def list_object(self, prefix: str):
         return self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
 

@@ -1,12 +1,16 @@
 import enum
 import json
+import logging
 import os
 import pathlib
-from typing import List, Optional, TypedDict, Iterable
+from typing import Iterable, List, Literal, Optional, TypedDict
+
 import pydantic
 import requests
 
 PAGE_SIZE = 20
+
+log = logging.getLogger(f"anv.{__name__}")
 
 
 class KasCredentialJson(TypedDict):
@@ -71,6 +75,10 @@ KlaytnNftResultTypeDef = TypedDict(
 )
 
 
+class KasApiError(Exception):
+    pass
+
+
 class KasApi:
     def __init__(self):
         kas_credential_path = os.getenv("KAS_CREDENTIAL_JSON_PATH")
@@ -90,13 +98,11 @@ class KasApi:
         """curl --location --request GET "https://th-api.klaytnapi.com/v2/contract/nft/0x90d535c434e967ec6e9accb0de5dcb34010865e0" \
             --header "x-chain-id: {chain-id}" \
             -u {access-key-id}:{secret-access-key}"""
+
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
         url = f"https://th-api.klaytnapi.com/v2/contract/nft/{nft_contract}"
-        r = session.get(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+
+        return self._kas_api_request("get", url, headers=headers)
 
     def get_nft_transfer_history_by_owner(
         self, chain_id: ChainId, owner: str
@@ -136,12 +142,9 @@ class KasApi:
 
         headers = {"x-chain-id": chain_id.value}
         params = {"kind": ",".join([token.value for token in kind])}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
         url = f"https://th-api.klaytnapi.com/v2/transfer/account/{owner}"
-        r = session.get(url, params=params, headers=headers)
-        r.raise_for_status()
-        return r.json()
+
+        return self._kas_api_request("get", url, headers=headers, params=params)
 
     def get_nft_list_by_owner(
         self, chain_id: ChainId, owner: str, contract_address: str
@@ -174,12 +177,9 @@ class KasApi:
             -u {access-key-id}:{secret-access-key}
         """
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
         url = f"https://th-api.klaytnapi.com/v2/contract/nft/{contract_address}/owner/{owner}"
-        r = session.get(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+
+        return self._kas_api_request("get", url, headers=headers)
 
     def get_ft(self, chain_id: ChainId, contract_address: str):
         """
@@ -196,13 +196,9 @@ class KasApi:
         """
 
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
-
         url = f"https://th-api.klaytnapi.com/v2/contract/ft/{contract_address}"
-        r = session.get(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+
+        return self._kas_api_request("get", url, headers=headers)
 
     def get_nft(
         self, chain_id: ChainId, nft_contract: str, token_id: str
@@ -229,13 +225,9 @@ class KasApi:
         """
 
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
-
         url = f"https://th-api.klaytnapi.com/v2/contract/nft/{nft_contract}/token/{token_id}"
-        r = session.get(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+
+        return self._kas_api_request("get", url, headers=headers)
 
     def get_nft_list(
         self,
@@ -261,13 +253,9 @@ class KasApi:
         """
         headers = {"x-chain-id": chain_id.value}
         params = {"size": size, "cursor": cursor}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
 
         url = f"https://th-api.klaytnapi.com/v2/contract/nft/{nft_contract}/token"
-        r = session.get(url, params=params, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        return self._kas_api_request("get", url, headers=headers, params=params)
 
     def get_contracts_by_owner(
         self, chain_id: ChainId, owner: str, kind: Iterable[TokenKind]
@@ -279,14 +267,10 @@ class KasApi:
         """
 
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
 
         # https://th-api.klaytnapi.com/v2/account/{address}/contract
         url = f"https://th-api.klaytnapi.com/v2/account/{owner}/contract"
-        r = session.get(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        return self._kas_api_request("get", url, headers=headers)
 
     def get_tokens_by_owner(
         self,
@@ -355,8 +339,6 @@ class KasApi:
         """
 
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
         params = {
             "kind": ",".join([token.value for token in kind]),
             "cursor": cursor,
@@ -365,9 +347,7 @@ class KasApi:
 
         # https://th-api.klaytnapi.com/v2/account/{address}/token
         url = f"https://th-api.klaytnapi.com/v2/account/{owner}/token"
-        r = session.get(url, params=params, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        return self._kas_api_request("get", url, params=params, headers=headers)
 
     def update_nft_contract_metadata(self, chain_id: ChainId, contract_address: str):
         """
@@ -379,16 +359,12 @@ class KasApi:
         """
 
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
 
         # https://th-api.klaytnapi.com/v2/account/{address}/token
         url = (
             f"https://th-api.klaytnapi.com/v2/contract/nft/{contract_address}/metadata"
         )
-        r = session.put(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        return self._kas_api_request("put", url, headers=headers)
 
     def update_nft_token_metadata(
         self, chain_id: ChainId, contract_address: str, token_id: str
@@ -398,11 +374,25 @@ class KasApi:
         """
 
         headers = {"x-chain-id": chain_id.value}
-        session = requests.Session()
-        session.auth = (self.access_key_id, self.secret_access_key)
 
         # https://th-api.klaytnapi.com/v2/account/{address}/token
         url = f"https://th-api.klaytnapi.com/v2/contract/nft/{contract_address}/token/{token_id}/metadata"
-        r = session.put(url, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        return self._kas_api_request("put", url, headers)
+
+    def _kas_api_request(
+        self,
+        method: Literal["get", "put", "post"],
+        url: str,
+        headers: dict,
+        params: dict = None,
+    ) -> dict:
+
+        try:
+            with requests.Session() as session:
+                session.auth = (self.access_key_id, self.secret_access_key)
+                r = session.request(method, url, params=params, headers=headers)
+                r.raise_for_status()
+                return r.json()
+        except requests.exceptions.HTTPError as e:
+            log.warning(f"KAS API request failed: {e}")
+            raise KasApiError(e)

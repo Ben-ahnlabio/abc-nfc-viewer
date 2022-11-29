@@ -76,9 +76,16 @@ class NFTServiceBase(NFTServiceProtocol):
         return json.loads(text)
 
     def _get_json_from_http(self, uri: str) -> NFTTokenJson:
-        r = requests.get(uri, timeout=5, verify=False)
-        r.raise_for_status()
-        return r.json()
+        try:
+            r = requests.get(uri, timeout=1, verify=False)
+            r.raise_for_status()
+            return r.json()
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError,
+        ) as e:
+            log.error("get token json fomr http. request error. %s", e)
+            raise NFTServiceTokenDataError(e)
 
 
 class AlchemyBaseNFTService(NFTServiceBase):
@@ -124,7 +131,14 @@ class AlchemyBaseNFTService(NFTServiceBase):
                     exec.submit(self._get_nft_metadata, nft)
                     for nft in owned_nfts_result.owned_nfts
                 ]
-            result = [f.result() for f in future_list]
+
+            result = []
+            for f in future_list:
+                try:
+                    # AlchemyApi 오류 발생 시 결과에서 제외
+                    result.append(f.result())
+                except alchemy.AlchemyApiError as e:
+                    log.error("alchemy api error: %s", e)
 
         return OwnedNftResult(
             cursor=owned_nfts_result.cursor,
@@ -139,25 +153,23 @@ class AlchemyBaseNFTService(NFTServiceBase):
                 contract_address=contract_address, token_id=token_id
             )
             return self._get_nft_metadata_from_api(nft)
+
         else:
-            return self.repo.get_NFT_metadata(
+            nft = self.repo.get_NFT_metadata(
                 self.net_map[self.network.value], contract_address, token_id
             )
+            return nft
 
     def _get_nft_metadata_from_api(
         self, nft: alchemy.AlchemyOwnedNft
     ) -> Optional[models.NftMetadata]:
-        try:
-            nft_metadata = self.alchemy_api.get_NFT_metadata(
-                self.network, nft.contract_address, nft.token_id
-            )
+        nft_metadata = self.alchemy_api.get_NFT_metadata(
+            self.network, nft.contract_address, nft.token_id
+        )
 
-            # NFT metadata 를 repository 에 caching
-            self.repo.set_NFT_metadata(nft_metadata)
-            return nft_metadata
-        except Exception as e:
-            log.error("get_nft_metadata_from_api error. %s nft=%s", e, nft)
-            return None
+        # NFT metadata 를 repository 에 caching
+        self.repo.set_NFT_metadata(nft_metadata)
+        return nft_metadata
 
     def _get_nft_metadata(
         self, nft: alchemy.AlchemyOwnedNft
@@ -206,22 +218,41 @@ class KlaytnNFTService(NFTServiceBase):
     def get_NFTs_by_owner(
         self, owner: str, cursor: str = None, resync: bool = False
     ) -> OwnedNftResult:
+        """klaytn wallet address nft 데이터를 가져온다."""
+
         owned_nfts_result = self.kas.get_tokens_by_owner(
             kas.ChainId.Cypress, owner, (kas.TokenKind.NFT, kas.TokenKind.MT), cursor
         )
 
         with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
             if resync:
-                future_list = [
-                    exec.submit(self._get_nft_metadata_from_api, nft)
+                future_to_nft = {
+                    exec.submit(self._get_nft_metadata_from_api, nft): nft
                     for nft in owned_nfts_result.owned_nfts
-                ]
+                }
+
             else:
-                future_list = [
-                    exec.submit(self._get_nft_metadata, nft)
+                future_to_nft = {
+                    exec.submit(self._get_nft_metadata, nft): nft
                     for nft in owned_nfts_result.owned_nfts
-                ]
-            result = [f.result() for f in future_list]
+                }
+
+            result = []
+            for f, nft in future_to_nft.items():
+                try:
+                    result.append(f.result())
+                except (
+                    kas.KasApiError,
+                    NFTServiceTokenDataError,
+                    ipfs.IPFSDownloadError,
+                ) as e:
+                    # kas api 오류 발생 nft 제외
+                    # token uri 데이터에 connection error 발생하는 경우도 제외
+                    # token uro 데이터가 ipfs 에 있는 경우. ipfs 에서 파일 받을 수 없는 경우 제외
+                    log.warning("kas api error %s. nft=%s", e, nft)
+                except Exception as e:
+                    log.exception("kas api error %s. nft=%s", e, nft)
+
         return OwnedNftResult(
             cursor=owned_nfts_result.cursor,
             nfts=[nft for nft in result if nft is not None],
@@ -250,11 +281,11 @@ class KlaytnNFTService(NFTServiceBase):
         metadata update API 를 호출하여 metadata update 요청
         """
         try:
-            # nft metadata update
+            # nft metadata update 도중 예외 발생하는 경우. 오류 무시
             self.kas.update_nft_token_metadata(
                 kas.ChainId.Cypress, nft.contract_address, nft.token_id
             )
-        except Exception as e:
+        except kas.KasApiError as e:
             log.warning(
                 "klaytn update_nft_token_metadata error. %s. contract_address=%s token_id=%s",
                 e,
@@ -265,15 +296,15 @@ class KlaytnNFTService(NFTServiceBase):
         try:
             nft_contract = self._get_nft_contract(nft.contract_address)
             if nft.token_uri:
-                token_data = self._get_nft_by_token_uri(nft.token_uri)
+                token_data = self._get_token_data_by_uri(nft.token_uri)
             else:
                 nft_result = self.kas.get_nft(
                     kas.ChainId.Cypress, nft.contract_address, nft.token_id
                 )
                 token_uri = nft_result["tokenUri"]
-                token_data = self._get_nft_by_token_uri(token_uri)
+                token_data = self._get_token_data_by_uri(token_uri)
 
-        except Exception as e:
+        except kas.KasApiError as e:
             log.error(
                 "klaytn nft token uri source error. %s. contract_address=%s, token_id=%s",
                 nft.token_uri,
@@ -287,7 +318,7 @@ class KlaytnNFTService(NFTServiceBase):
                     "error": e,
                 },
             )
-            return None
+            raise NFTServiceError(e)
 
         nft_metadata = models.NftMetadata(
             chain=models.Chain.KLAYTN.value,
@@ -323,34 +354,6 @@ class KlaytnNFTService(NFTServiceBase):
             return nft_metadata
 
         return self._get_nft_metadata_from_api(nft)
-
-    def _get_nft_by_token_uri(self, uri: str) -> NFTTokenJson:
-        """uri 에 따른 데이터 parsing
-
-        data:application/json;base64,
-        data:image/svg+xml;utf8,
-        http://
-        ipfs://
-
-        """
-
-        if uri.startswith("ipfs://"):
-            return self.ipfs.get_json(uri)
-        elif uri.startswith("data:application/json;base64"):
-            return self._get_base_64_json(uri)
-        else:  # http
-            return self._get_json_from_http(uri)
-
-    def _get_base_64_json(self, uri: str) -> NFTTokenJson:
-        _, base64_data = uri.split(",")
-        decoded_data = base64.b64decode(base64_data)
-        text = decoded_data.decode("utf-8")
-        return json.loads(text)
-
-    def _get_json_from_http(self, uri: str) -> NFTTokenJson:
-        r = requests.get(uri, timeout=1, verify=False)
-        r.raise_for_status()
-        return r.json()
 
     def _get_nft_contract(self, contract_address: str) -> models.KlaytnNftContract:
         result = self.kas.get_nft_contract_raw(kas.ChainId.Cypress, contract_address)
@@ -542,5 +545,21 @@ class NFTService:
     def get_NFT_by_contract_token_id(
         self, chain: models.Chain, contract_address: str, token_id: str, resync: bool
     ) -> Optional[models.NftMetadata]:
-        nft_srv: NFTServiceProtocol = self.chain_map[chain]
-        return nft_srv.get_NFT_by_contract_token_id(contract_address, token_id, resync)
+        try:
+            nft_srv: NFTServiceProtocol = self.chain_map[chain]
+            nft = nft_srv.get_NFT_by_contract_token_id(
+                contract_address, token_id, resync
+            )
+            return nft
+
+        except (alchemy.AlchemyApiError, kas.KasApiError, moralis.MoralisApiError) as e:
+            log.error("api error. %s", e)
+            raise NFTServiceError(e)
+
+
+class NFTServiceError(Exception):
+    pass
+
+
+class NFTServiceTokenDataError(Exception):
+    pass

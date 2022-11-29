@@ -1,0 +1,39 @@
+# docker stop storage
+# docker rm storage
+# docker run -d \
+# -p 27017:27017 \
+# --name storage \
+# --restart=always \
+# -v /storage/mongodb/data:/data/db \
+# -v /storage/mongodb/conf:/etc/mongo \
+# mongo:3.6-xenial --config /etc/mongo/mongod.conf
+
+version: '3.8'
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+      - ./mongod.conf.orig:/etc/mongod.conf.orig
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=ricepotato
+      - MONGO_INITDB_ROOT_PASSWORD=qkqhshadk40
+      - MONGO_INITDB_DATABASE=mydb
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ricepotato
+      ME_CONFIG_MONGODB_ADMINPASSWORD: qkqhshadk40
+      ME_CONFIG_MONGODB_URL: mongodb://ricepotato:qkqhshadk40@mongodb:27017/
+
+volumes:
+  mongo_data:
+    driver: local
