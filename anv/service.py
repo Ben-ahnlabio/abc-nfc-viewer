@@ -615,8 +615,8 @@ class NFTService:
     ):
         self.chains = {
             models.Chain.ETHEREUM: ethereum,
-            models.Chain.POLYGON: klaytn,
-            models.Chain.KLAYTN: polygon,
+            models.Chain.POLYGON: polygon,
+            models.Chain.KLAYTN: klaytn,
             models.Chain.BINANCE: binance,
             models.Chain.ETHEREUM_GOERLI: ethereum_goerli,
             models.Chain.POLYGON_MUMBAI: polygon_mumbai,
