@@ -72,3 +72,11 @@ ul.attributes-list{
     margin: 0;
     padding: 10px;
 }
+
+div.address-section {
+    display: flex;
+}
+
+div.address-column{
+    width: 450px;
+}

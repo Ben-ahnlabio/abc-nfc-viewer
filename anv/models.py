@@ -9,6 +9,10 @@ class Chain(enum.Enum):
     KLAYTN = "klaytn"
     POLYGON = "polygon"
     BINANCE = "binance"
+    ETHEREUM_GOERLI = "ethereum_goerli"
+    POLYGON_MUMBAI = "polygon_mumbai"
+    KLAYTN_BAOBAB = "klaytn_baobab"
+    BINANCE_TESTNET = "binance_testnet"
 
 
 class NftAttribute(pydantic.BaseModel):

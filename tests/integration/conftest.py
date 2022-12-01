@@ -94,13 +94,19 @@ def ipfs():
 
 @pytest.fixture
 def web3_obj():
-    infura_url = "https://mainnet.infura.io/v3/c20947b695d14428968c560f69976d74"
+    infura_api_key = os.getenv("INFURA_API_KEY")
+    infura_url = f"https://mainnet.infura.io/v3/{infura_api_key}"
     yield web3.Web3(web3.Web3.HTTPProvider(infura_url))
 
 
 @pytest.fixture
 def binance_nft_service(disk_repo, ipfs, moralis_api):
     yield service.BinanceNFTService(disk_repo, ipfs, moralis_api)
+
+
+@pytest.fixture
+def binance_test_nft_service(disk_repo, ipfs, moralis_api):
+    yield service.BinanceTestNFTService(disk_repo, ipfs, moralis_api)
 
 
 @pytest.fixture
@@ -116,6 +122,11 @@ def polygon_nft_service(disk_repo, ipfs, alchemy_api):
 @pytest.fixture
 def klaytn_nft_service(disk_repo, ipfs, kas_api):
     yield service.KlaytnNFTService(disk_repo, ipfs, kas_api)
+
+
+@pytest.fixture
+def klaytn_baobob_nft_service(disk_repo, ipfs, kas_api):
+    yield service.KlaytnBaobobNFTService(disk_repo, ipfs, kas_api)
 
 
 @pytest.fixture

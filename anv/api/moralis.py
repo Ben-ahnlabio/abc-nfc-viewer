@@ -59,6 +59,7 @@ class MoralisNFTMetadata(pydantic.BaseModel):
 class MorailsNetwork(enum.Enum):
     EthereumMainNet = "eth"
     BinanceMainNet = "bsc"
+    BinanceTestNet = "0x61"
 
 
 class MorailsApi:

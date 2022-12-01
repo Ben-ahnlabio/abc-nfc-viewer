@@ -1,4 +1,6 @@
+import pytest
 from anv import service
+from anv.api import alchemy
 
 
 def test_binance_service_get_nfts(binance_nft_service: service.BinanceNFTService):
@@ -52,11 +54,6 @@ def test_klaytn_service_get_nft_contract_token_id(
     )
     assert result
 
-    result = klaytn_nft_service.get_NFT_by_contract_token_id(
-        contract_address=contract_address, token_id=token_id, resync=False
-    )
-    assert result
-
 
 def test_ethereum_service_get_nfts(ethereum_nft_service: service.EthereumNFTService):
     owner = "0x2488f090656BddB63fe3Bdb506D0D109AaaD93Bb"
@@ -91,18 +88,17 @@ def test_polygon_service_get_nfts(polygon_nft_service: service.PolygonNFTService
     assert nfts2
 
 
-def test_polygon_service_get_nft_contract_token_id(
-    polygon_nft_service: service.PolygonNFTService,
+def test_klaytn_baobob_service_get_nfts(
+    klaytn_baobob_nft_service: service.KlaytnBaobobNFTService,
 ):
-    contract_address = "0xe013a4dd240b4e4821148ff786cfa050d60182bb"
-    token_id = "0x10f"
+    owner = "0x875b9747f1aD48Fdbce41c91e444E3BA0766Bc45"
+    nfts1 = klaytn_baobob_nft_service.get_NFTs_by_owner(owner)
+    assert nfts1
 
-    result = polygon_nft_service.get_NFT_by_contract_token_id(
-        contract_address=contract_address, token_id=token_id, resync=True
-    )
-    assert result
 
-    result = polygon_nft_service.get_NFT_by_contract_token_id(
-        contract_address=contract_address, token_id=token_id, resync=False
-    )
-    assert result
+def test_binance_testnet_service_get_nfts(
+    binance_test_nft_service: service.BinanceTestNFTService,
+):
+    owner = "0x7b399B9c5bb519D4258e61100cC5ef2F4Bd9c873"
+    nfts1 = binance_test_nft_service.get_NFTs_by_owner(owner)
+    assert nfts1

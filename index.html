@@ -26,50 +26,106 @@
           <option>polygon</option>
           <option>klaytn</option>
           <option>binance</option>
+          <option>ethereum_goerli</option>
+          <option>polygon_mumbai</option>
+          <option>klaytn_baobab</option>
+          <option>binance_testnet</option>
         </select>
         <label for="chkResync">resync</label>
         <input id="chkResync" type="checkbox" />
         <input id="btnSubmit" type="submit" value="show NFT" />
       </form>
-      <h2>ethereum</h2>
-      <ul class="address-list address-list-ethereum">
-        <li><span>0x2488f090656BddB63fe3Bdb506D0D109AaaD93Bb</span></li>
-        <li><span>0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797</span></li>
-        <li><span>0x0232d1083E970F0c78f56202b9A666B526FA379F</span></li>
-        <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
-        <li><span>0xC6F6c64B87A7Aba3f46D6c717FEe13314da4Ae27</span>(Sean)</li>
-        <li><span>0x90ef80035dF87DE9d211de8E8EE7D3cEE9488619</span>(Daisy)</li>
-        <li><span>0x31bf89ac0576BB926Aa960008bCC6b59fb828004</span>(Ikko)</li>
-      </ul>
-
-      <h2>klaytn</h2>
-      <ul class="address-list address-list-klaytn">
-        <li><span>0x03E5ecA4B61412A5ece56928318d00c3b5567ef8</span></li>
-        <li><span>0x9B0582d70744464D7c3Ca4452490Ea2F0a0db6a4</span></li>
-        <li><span>0x745C09006E76f9c357E9de6DF0f28a336fc7CB3C</span></li>
-        <li><span>0xf901be601848b31Bc4455d5C405B0FbC2401c9b4</span>(Ethan)</li>
-        <li><span>0x31bf89ac0576BB926Aa960008bCC6b59fb828004</span>(Ikko)</li>
-      </ul>
-
-      <h2>polygon</h2>
-      <ul class="address-list address-list-polygon">
-        <li><span>0xE36223C79EAA9d1e436ab4348721a1c55B46B7c4</span></li>
-        <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
-        <li><span>0xC6F6c64B87A7Aba3f46D6c717FEe13314da4Ae27</span>(Sean)</li>
-      </ul>
-
-      <h2>binance</h2>
-      <ul class="address-list address-list-binance">
-        <li><span>0x609306d8890904a0019997585018b70c8c4e1fea</span></li>
-        <li><span>0x308318B98B48C1fdfa72efd0BD3F5233c4b45AA9</span></li>
-        <li><span>0xBAE94f68292E0d08297EF69382D54D292E6aeF17</span></li>
-        <li><span>0x6cAF4Ac5B3ADDdAb07d3eFf7F17dB8245f481909</span></li>
-        <li>
-          <span>0xe0a9e5b59701a776575fdd6257c3f89ae362629a</span> (binance NFT
-          contract)
-        </li>
-      </ul>
-
+      <hr style="margin: 40px 0" />
+      <h2>EOA addresses</h2>
+      <div class="address-section">
+        <div class="address-column">
+          <h2>ethereum</h2>
+          <ul class="address-list address-list-ethereum">
+            <li><span>0x2488f090656BddB63fe3Bdb506D0D109AaaD93Bb</span></li>
+            <li><span>0x5B5bc2767919f02dE66E31d4cf90aD7A68e9C797</span></li>
+            <li><span>0x0232d1083E970F0c78f56202b9A666B526FA379F</span></li>
+            <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
+            <li>
+              <span>0xC6F6c64B87A7Aba3f46D6c717FEe13314da4Ae27</span>(Sean)
+            </li>
+            <li>
+              <span>0x90ef80035dF87DE9d211de8E8EE7D3cEE9488619</span>(Daisy)
+            </li>
+            <li>
+              <span>0x31bf89ac0576BB926Aa960008bCC6b59fb828004</span>(Ikko)
+            </li>
+          </ul>
+        </div>
+        <div class="address-column">
+          <h2>ethereum goerli</h2>
+          <ul class="address-list address-list-ethereum_goerli">
+            <li><span>0x305B9D3a605702Cfd2ee0B7Cb5d8Ea469643558B</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="address-section">
+        <div class="address-column">
+          <h2>klaytn</h2>
+          <ul class="address-list address-list-klaytn">
+            <li><span>0x03E5ecA4B61412A5ece56928318d00c3b5567ef8</span></li>
+            <li><span>0x9B0582d70744464D7c3Ca4452490Ea2F0a0db6a4</span></li>
+            <li><span>0x745C09006E76f9c357E9de6DF0f28a336fc7CB3C</span></li>
+            <li>
+              <span>0xf901be601848b31Bc4455d5C405B0FbC2401c9b4</span>(Ethan)
+            </li>
+            <li>
+              <span>0x31bf89ac0576BB926Aa960008bCC6b59fb828004</span>(Ikko)
+            </li>
+          </ul>
+        </div>
+        <div class="address-column">
+          <h2>klaytn baobab</h2>
+          <ul class="address-list address-list-klaytn_baobab">
+            <li><span>0xf6c1F3f6D93f84ccC25CDeb5569924D9F60ef945</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="address-section">
+        <div class="address-column">
+          <h2>polygon</h2>
+          <ul class="address-list address-list-polygon">
+            <li><span>0xE36223C79EAA9d1e436ab4348721a1c55B46B7c4</span></li>
+            <li><span>0xB9c7eCd75DD5f4e57C236658E5b5Ab0a04D3bFC7</span></li>
+            <li>
+              <span>0xC6F6c64B87A7Aba3f46D6c717FEe13314da4Ae27</span>(Sean)
+            </li>
+          </ul>
+        </div>
+        <div class="address-column">
+          <h2>polygon mumbai</h2>
+          <ul class="address-list address-list-polygon_mumbai">
+            <li><span>0x6518836008b5BDECa93E5B9C8CBD04C54e94673E</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="address-section">
+        <div class="address-column">
+          <h2>binance</h2>
+          <ul class="address-list address-list-binance">
+            <li><span>0x209F2A37Ccb5672794329cB311406A995de9347c</span></li>
+            <li><span>0x609306d8890904a0019997585018b70c8c4e1fea</span></li>
+            <li><span>0x308318B98B48C1fdfa72efd0BD3F5233c4b45AA9</span></li>
+            <li><span>0xBAE94f68292E0d08297EF69382D54D292E6aeF17</span></li>
+            <li><span>0x6cAF4Ac5B3ADDdAb07d3eFf7F17dB8245f481909</span></li>
+            <li>
+              <span>0xe0a9e5b59701a776575fdd6257c3f89ae362629a</span> (binance
+              NFT contract)
+            </li>
+          </ul>
+        </div>
+        <div class="address-column">
+          <h2>binance testnet</h2>
+          <ul class="address-list address-list-binance_testnet">
+            <li><span>0xeD320948f5dAF98603E598059af5DFE97581997E</span></li>
+          </ul>
+        </div>
+      </div>
+      <hr />
       <ul id="nftList"></ul>
     </div>
     <script>
@@ -93,10 +149,18 @@
           nftList.innerHTML = "<li><h3>Loading...</h3></li>";
         });
 
-        addAddressClickEvent("ethereum");
-        addAddressClickEvent("polygon");
-        addAddressClickEvent("klaytn");
-        addAddressClickEvent("binance");
+        const chains = [
+          "ethereum",
+          "polygon",
+          "klaytn",
+          "binance",
+          "ethereum_goerli",
+          "klaytn_baobab",
+          "binance_testnet",
+          "polygon_mumbai",
+        ];
+
+        chains.forEach((chain) => addAddressClickEvent(chain));
       }
 
       async function getNfts(baseUrl, owner, chain, resync) {
