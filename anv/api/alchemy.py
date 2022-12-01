@@ -53,6 +53,12 @@ class AlchemyApi:
             AlchemyNet.EthGoerliNet: self.ether_goerli_api_key,
             AlchemyNet.PolygonMumbaiNet: self.ploygon_test_api_key,
         }
+        self.chains = {
+            AlchemyNet.EthMainNet: Chain.ETHEREUM.value,
+            AlchemyNet.EthGoerliNet: Chain.ETHEREUM_GOERLI.value,
+            AlchemyNet.PolygonMainNet: Chain.POLYGON.value,
+            AlchemyNet.PolygonMumbaiNet: Chain.POLYGON_MUMBAI.value,
+        }
 
     def get_NFTs(
         self, network: AlchemyNet, owner: str, cursor: str = None
@@ -154,22 +160,19 @@ class AlchemyApi:
                         display_type=attr.get("display_type"),
                     )
                 )
-            except KeyError as e:
+            except (KeyError, TypeError) as e:
                 log.warning(
-                    "NftMetadata attribute error. %s. contract_address=%s, token_id=%s",
+                    "NftMetadata attribute error. %s. [%s] contract_address=%s, token_id=%s, attr=%s",
                     e,
+                    network,
                     contract_address,
                     token_id,
+                    attr,
                 )
                 attributes = []
 
-        if network == network.EthMainNet:
-            chain = Chain.ETHEREUM.value
-        elif network == network.PolygonMainNet:
-            chain = Chain.POLYGON.value
-
         return NftMetadata(
-            chain=chain,
+            chain=self.chains[network],
             contract_address=contract_address,
             contract_name=contract_name,
             token_id=token_id,

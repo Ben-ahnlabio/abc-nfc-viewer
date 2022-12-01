@@ -105,6 +105,11 @@ def binance_nft_service(disk_repo, ipfs, moralis_api):
 
 
 @pytest.fixture
+def binance_test_nft_service(disk_repo, ipfs, moralis_api):
+    yield service.BinanceTestNFTService(disk_repo, ipfs, moralis_api)
+
+
+@pytest.fixture
 def ethereum_nft_service(disk_repo, ipfs, alchemy_api):
     yield service.EthereumNFTService(disk_repo, ipfs, alchemy_api)
 
@@ -117,6 +122,11 @@ def polygon_nft_service(disk_repo, ipfs, alchemy_api):
 @pytest.fixture
 def klaytn_nft_service(disk_repo, ipfs, kas_api):
     yield service.KlaytnNFTService(disk_repo, ipfs, kas_api)
+
+
+@pytest.fixture
+def klaytn_baobob_nft_service(disk_repo, ipfs, kas_api):
+    yield service.KlaytnBaobobNFTService(disk_repo, ipfs, kas_api)
 
 
 @pytest.fixture

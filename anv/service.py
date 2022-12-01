@@ -83,6 +83,7 @@ class NFTServiceBase(NFTServiceProtocol):
         except (
             requests.exceptions.ConnectionError,
             requests.exceptions.HTTPError,
+            requests.exceptions.Timeout,
         ) as e:
             log.error("get token json fomr http. request error. %s", e)
             raise NFTServiceTokenDataError(e)
@@ -101,7 +102,9 @@ class AlchemyBaseNFTService(NFTServiceBase):
         self.network: alchemy.AlchemyNet
         self.net_map = {
             alchemy.AlchemyNet.EthMainNet.value: models.Chain.ETHEREUM,
+            alchemy.AlchemyNet.EthGoerliNet.value: models.Chain.ETHEREUM_GOERLI,
             alchemy.AlchemyNet.PolygonMainNet.value: models.Chain.POLYGON,
+            alchemy.AlchemyNet.PolygonMumbaiNet.value: models.Chain.POLYGON_MUMBAI,
         }
 
     def get_NFTs_by_owner(
@@ -441,11 +444,19 @@ class BinanceNFTServiceBase(NFTServiceBase):
 
         result = []
         for nft in owned_nfts_result.owned_nfts:
-            if resync:
-                metadata = self._get_nft_metadata_from_api(nft)
-            else:
-                metadata = self._get_nft_metadata(nft)
-            result.append(metadata)
+            try:
+                if resync:
+                    metadata = self._get_nft_metadata_from_api(nft)
+                else:
+                    metadata = self._get_nft_metadata(nft)
+                result.append(metadata)
+            except NFTServiceTokenDataError as e:
+                log.warning(
+                    "binance nft token data error. %s. contract_address=%s, token_id=%s",
+                    e,
+                    nft.token_address,
+                    nft.token_id,
+                )
 
         # multithread 실행 시 moralis API 가 Too many request 발생함
         # with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
@@ -609,8 +620,8 @@ class NFTService:
             models.Chain.BINANCE: binance,
             models.Chain.ETHEREUM_GOERLI: ethereum_goerli,
             models.Chain.POLYGON_MUMBAI: polygon_mumbai,
-            models.Chain.BINANCE_TESTNET: klaytn_baobab,
-            models.Chain.KLAYTN_BAOBAB: binance_testnet,
+            models.Chain.BINANCE_TESTNET: binance_testnet,
+            models.Chain.KLAYTN_BAOBAB: klaytn_baobab,
         }
 
     def get_NFTs_by_owner(
