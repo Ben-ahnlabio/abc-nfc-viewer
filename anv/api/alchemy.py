@@ -18,7 +18,8 @@ PAGE_SIZE = 20
 class AlchemyNet(enum.Enum):
     EthMainNet = "eth-mainnet"
     PolygonMainNet = "polygon-mainnet"
-    SolanaMainNet = "solana-mainnet"
+    EthGoerliNet = "eth-goerli"
+    PolygonMumbaiNet = "polygon-mumbai"
 
 
 class AlchemyOwnedNft(pydantic.BaseModel):
@@ -43,12 +44,14 @@ class AlchemyApiValueError(AlchemyApiError):
 class AlchemyApi:
     def __init__(self):
         self.ether_main_api_key = os.getenv("ALCHEMY_ETHER_MAIN_API_KEY")
+        self.ether_goerli_api_key = os.getenv("ALCHEMY_ETHER_GOERLI_MAIN_API_KEY")
         self.ploygon_main_api_key = os.getenv("ALCHEMY_POLYGON_MAIN_API_KEY")
-        self.solana_main_api_key = os.getenv("ALCHEMY_SOLANA_MAIN_API_KEY")
+        self.ploygon_test_api_key = os.getenv("ALCHEMY_POLYGON_TEST_API_KEY")
         self.api_key = {
             AlchemyNet.EthMainNet: self.ether_main_api_key,
             AlchemyNet.PolygonMainNet: self.ploygon_main_api_key,
-            AlchemyNet.SolanaMainNet: self.solana_main_api_key,
+            AlchemyNet.EthGoerliNet: self.ether_goerli_api_key,
+            AlchemyNet.PolygonMumbaiNet: self.ploygon_test_api_key,
         }
 
     def get_NFTs(

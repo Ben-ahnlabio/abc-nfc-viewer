@@ -193,6 +193,17 @@ class EthereumNFTService(AlchemyBaseNFTService):
         self.network = alchemy.AlchemyNet.EthMainNet
 
 
+class EthereumGoerliNFTService(AlchemyBaseNFTService):
+    def __init__(
+        self,
+        repo: repository.NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+        alchemy_api: alchemy.AlchemyApi,
+    ):
+        super().__init__(repo, ipfs, alchemy_api)
+        self.network = alchemy.AlchemyNet.EthGoerliNet
+
+
 class PolygonNFTService(AlchemyBaseNFTService):
     def __init__(
         self,
@@ -204,24 +215,37 @@ class PolygonNFTService(AlchemyBaseNFTService):
         self.network = alchemy.AlchemyNet.PolygonMainNet
 
 
-class KlaytnNFTService(NFTServiceBase):
+class PolygonMumbaiNFTService(AlchemyBaseNFTService):
     def __init__(
         self,
         repo: repository.NFTMetadataRespository,
         ipfs: ipfs.IPFSProxy,
-        kas: kas.KasApi,
+        alchemy_api: alchemy.AlchemyApi,
     ):
-        self.kas = kas
+        super().__init__(repo, ipfs, alchemy_api)
+        self.network = alchemy.AlchemyNet.PolygonMumbaiNet
+
+
+class KlaytnNFTServiceBase(NFTServiceBase):
+    def __init__(
+        self,
+        repo: repository.NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+        kas_api: kas.KasApi,
+    ):
+        self.kas_api = kas_api
         self.repo = repo
         self.ipfs = ipfs
+        self.kas_chain = kas.ChainId.Cypress
+        self.chain = models.Chain.KLAYTN
 
     def get_NFTs_by_owner(
         self, owner: str, cursor: str = None, resync: bool = False
     ) -> OwnedNftResult:
         """klaytn wallet address nft 데이터를 가져온다."""
 
-        owned_nfts_result = self.kas.get_tokens_by_owner(
-            kas.ChainId.Cypress, owner, (kas.TokenKind.NFT, kas.TokenKind.MT), cursor
+        owned_nfts_result = self.kas_api.get_tokens_by_owner(
+            self.kas_chain, owner, (kas.TokenKind.NFT, kas.TokenKind.MT), cursor
         )
 
         with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as exec:
@@ -268,7 +292,7 @@ class KlaytnNFTService(NFTServiceBase):
             return self._get_nft_metadata_from_api(owned_nft)
         else:
             nft_metadata = self.repo.get_NFT_metadata(
-                models.Chain.KLAYTN, contract_address, token_id
+                self.chain, contract_address, token_id
             )
             return nft_metadata
 
@@ -282,8 +306,8 @@ class KlaytnNFTService(NFTServiceBase):
         """
         try:
             # nft metadata update 도중 예외 발생하는 경우. 오류 무시
-            self.kas.update_nft_token_metadata(
-                kas.ChainId.Cypress, nft.contract_address, nft.token_id
+            self.kas_api.update_nft_token_metadata(
+                self.kas_chain, nft.contract_address, nft.token_id
             )
         except kas.KasApiError as e:
             log.warning(
@@ -298,8 +322,8 @@ class KlaytnNFTService(NFTServiceBase):
             if nft.token_uri:
                 token_data = self._get_token_data_by_uri(nft.token_uri)
             else:
-                nft_result = self.kas.get_nft(
-                    kas.ChainId.Cypress, nft.contract_address, nft.token_id
+                nft_result = self.kas_api.get_nft(
+                    self.kas_chain, nft.contract_address, nft.token_id
                 )
                 token_uri = nft_result["tokenUri"]
                 token_data = self._get_token_data_by_uri(token_uri)
@@ -321,7 +345,7 @@ class KlaytnNFTService(NFTServiceBase):
             raise NFTServiceError(e)
 
         nft_metadata = models.NftMetadata(
-            chain=models.Chain.KLAYTN.value,
+            chain=self.chain.value,
             contract_address=nft.contract_address,
             contract_name=nft_contract.name,
             token_id=nft.token_id,
@@ -348,7 +372,7 @@ class KlaytnNFTService(NFTServiceBase):
         self, nft: kas.KlaytnOwnedNft
     ) -> Optional[models.NftMetadata]:
         nft_metadata = self.repo.get_NFT_metadata(
-            models.Chain.KLAYTN, nft.contract_address, nft.token_id
+            self.chain, nft.contract_address, nft.token_id
         )
         if nft_metadata:
             return nft_metadata
@@ -356,7 +380,7 @@ class KlaytnNFTService(NFTServiceBase):
         return self._get_nft_metadata_from_api(nft)
 
     def _get_nft_contract(self, contract_address: str) -> models.KlaytnNftContract:
-        result = self.kas.get_nft_contract_raw(kas.ChainId.Cypress, contract_address)
+        result = self.kas_api.get_nft_contract_raw(self.kas_chain, contract_address)
         return models.KlaytnNftContract(
             address=result["address"],
             name=result["name"],
@@ -372,7 +396,31 @@ class KlaytnNFTService(NFTServiceBase):
         )
 
 
-class BinanceNFTService(NFTServiceBase):
+class KlaytnNFTService(KlaytnNFTServiceBase):
+    def __init__(
+        self,
+        repo: repository.NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+        kas_api: kas.KasApi,
+    ):
+        super().__init__(repo, ipfs, kas_api)
+        self.kas_chain = kas.ChainId.Cypress
+        self.chain = models.Chain.KLAYTN
+
+
+class KlaytnBaobobNFTService(KlaytnNFTServiceBase):
+    def __init__(
+        self,
+        repo: repository.NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+        kas_api: kas.KasApi,
+    ):
+        super().__init__(repo, ipfs, kas_api)
+        self.kas_chain = kas.ChainId.Baobab
+        self.chain = models.Chain.KLAYTN_BAOBAB
+
+
+class BinanceNFTServiceBase(NFTServiceBase):
     def __init__(
         self,
         repo: repository.NFTMetadataRespository,
@@ -382,14 +430,14 @@ class BinanceNFTService(NFTServiceBase):
         self.moralis_api = moralis_api
         self.repo = repo
         self.ipfs = ipfs
+        self.binance_chain = moralis.MorailsNetwork.BinanceMainNet
+        self.chain = models.Chain.BINANCE
 
     def get_NFTs_by_owner(
         self, owner: str, cursor: str = None, resync: bool = False
     ) -> OwnedNftResult:
 
-        owned_nfts_result = self.moralis_api.get_NFTs(
-            moralis.MorailsNetwork.BinanceMainNet, owner, cursor
-        )
+        owned_nfts_result = self.moralis_api.get_NFTs(self.binance_chain, owner, cursor)
 
         result = []
         for nft in owned_nfts_result.owned_nfts:
@@ -427,14 +475,14 @@ class BinanceNFTService(NFTServiceBase):
             return self._get_nft_metadata_from_api(nft)
         else:
             return self.repo.get_NFT_metadata(
-                models.Chain.BINANCE, nft.token_address, nft.token_id
+                self.chain, nft.token_address, nft.token_id
             )
 
     def _get_nft_metadata_from_api(
         self, nft: moralis.MoralisOwnedNft
     ) -> models.NftMetadata:
         nft_metadata = self.moralis_api.get_NFT_metadata(
-            moralis.MorailsNetwork.BinanceMainNet, nft.token_address, nft.token_id
+            self.binance_chain, nft.token_address, nft.token_id
         )
 
         token_data = self._get_token_data(nft_metadata)
@@ -470,7 +518,7 @@ class BinanceNFTService(NFTServiceBase):
 
         result = models.NftMetadata(
             owner=nft_metadata.owner_of,
-            chain=models.Chain.BINANCE.value,
+            chain=self.chain.value,
             contract_address=nft.token_address,
             contract_name=nft_metadata.name,
             token_id=nft.token_id,
@@ -491,7 +539,7 @@ class BinanceNFTService(NFTServiceBase):
 
     def _get_nft_metadata(self, nft: moralis.MoralisOwnedNft) -> models.NftMetadata:
         metadata = self.repo.get_NFT_metadata(
-            models.Chain.BINANCE, nft.token_address, nft.token_id
+            self.chain, nft.token_address, nft.token_id
         )
         if metadata:
             return metadata
@@ -518,27 +566,57 @@ class BinanceNFTService(NFTServiceBase):
             }
 
 
+class BinanceNFTService(BinanceNFTServiceBase):
+    def __init__(
+        self,
+        repo: repository.NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+        moralis_api: moralis.MorailsApi,
+    ):
+        super().__init__(repo, ipfs, moralis_api)
+        self.binance_chain = moralis.MorailsNetwork.BinanceMainNet
+        self.chain = models.Chain.BINANCE
+
+
+class BinanceTestNFTService(BinanceNFTServiceBase):
+    def __init__(
+        self,
+        repo: repository.NFTMetadataRespository,
+        ipfs: ipfs.IPFSProxy,
+        moralis_api: moralis.MorailsApi,
+    ):
+        super().__init__(repo, ipfs, moralis_api)
+        self.binance_chain = moralis.MorailsNetwork.BinanceTestNet
+        self.chain = models.Chain.BINANCE_TESTNET
+
+
 class NFTService:
     def __init__(
         self,
         ethereum: NFTServiceProtocol,
-        polygon: NFTServiceProtocol,
         klaytn: NFTServiceProtocol,
+        polygon: NFTServiceProtocol,
         binance: NFTServiceProtocol,
-        repo: repository.NFTSourceRepositoryProtocol,
+        ethereum_goerli: NFTServiceProtocol,
+        polygon_mumbai: NFTServiceProtocol,
+        klaytn_baobab: NFTServiceProtocol,
+        binance_testnet: NFTServiceProtocol,
     ):
-        self.chain_map = {
+        self.chains = {
             models.Chain.ETHEREUM: ethereum,
-            models.Chain.POLYGON: polygon,
-            models.Chain.KLAYTN: klaytn,
+            models.Chain.POLYGON: klaytn,
+            models.Chain.KLAYTN: polygon,
             models.Chain.BINANCE: binance,
+            models.Chain.ETHEREUM_GOERLI: ethereum_goerli,
+            models.Chain.POLYGON_MUMBAI: polygon_mumbai,
+            models.Chain.BINANCE_TESTNET: klaytn_baobab,
+            models.Chain.KLAYTN_BAOBAB: binance_testnet,
         }
-        self.repo = repo
 
     def get_NFTs_by_owner(
         self, chain: models.Chain, owner: str, cursor: str = None, resync: bool = False
     ) -> OwnedNftResult:
-        nft_srv: NFTServiceProtocol = self.chain_map[chain]
+        nft_srv: NFTServiceProtocol = self.chains[chain]
         owned_nfts_result = nft_srv.get_NFTs_by_owner(owner, cursor, resync)
         return owned_nfts_result
 
@@ -546,7 +624,7 @@ class NFTService:
         self, chain: models.Chain, contract_address: str, token_id: str, resync: bool
     ) -> Optional[models.NftMetadata]:
         try:
-            nft_srv: NFTServiceProtocol = self.chain_map[chain]
+            nft_srv: NFTServiceProtocol = self.chains[chain]
             nft = nft_srv.get_NFT_by_contract_token_id(
                 contract_address, token_id, resync
             )
