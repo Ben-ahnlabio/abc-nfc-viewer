@@ -1,6 +1,51 @@
 import web3
 
 
+def test_get_klaytn_metadata(web3_klaytn_obj: web3.Web3):
+    abi = [
+        {
+            "inputs": [],
+            "name": "name",
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "inputs": [
+                {"internalType": "uint256", "name": "tokenId", "type": "uint256"}
+            ],
+            "name": "tokenURI",
+            "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+            "stateMutability": "view",
+            "type": "function",
+        },
+        {
+            "constant": True,
+            "inputs": [{"name": "", "type": "uint256"}],
+            "name": "uri",
+            "outputs": [{"name": "", "type": "string"}],
+            "payable": False,
+            "stateMutability": "view",
+            "type": "function",
+        },
+    ]
+
+    tokenContract = "0x1a291bc87d4e40b88d6d77a63b822d0dc01de825"
+    checksum_addr = web3.Web3.toChecksumAddress(tokenContract)
+    contract = web3_klaytn_obj.eth.contract(address=checksum_addr, abi=abi)
+    assert contract
+
+    get_name_func = contract.get_function_by_name("name")
+    name = get_name_func().call()
+    assert name
+
+    name = contract.functions.name().call()
+    assert name
+
+    uri = contract.functions.uri(0x4C9).call()
+    assert uri
+
+
 def test_get_erc_721_nft_metadata_from_contract_address_using_web3(web3_obj: web3.Web3):
     # ERC-721
     # erc_721_api

@@ -100,6 +100,12 @@ def web3_obj():
 
 
 @pytest.fixture
+def web3_klaytn_obj():
+    klaytn_node_url = "https://public-node-api.klaytnapi.com/v1/cypress"
+    yield web3.Web3(web3.Web3.HTTPProvider(klaytn_node_url))
+
+
+@pytest.fixture
 def binance_nft_service(disk_repo, ipfs, moralis_api):
     yield service.BinanceNFTService(disk_repo, ipfs, moralis_api)
 

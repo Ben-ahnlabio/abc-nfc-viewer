@@ -299,6 +299,23 @@ class KlaytnNFTServiceBase(NFTServiceBase):
             )
             return nft_metadata
 
+    def _replace_id_in_token_uri(self, uri: str, token_id: str):
+        """
+
+        https://kips.klaytn.foundation/KIPs/kip-37
+
+        Metadata
+        The URI value allows for ID substitution by clients. If the string {id} exists in any URI,
+        clients MUST replace this with the actual token ID in hexadecimal form.
+        This allows for a large number of tokens to use the same on-chain string by defining a URI once,
+        for that large number of tokens.
+        """
+
+        if "{id}" not in uri:
+            return uri
+
+        return uri.replace("{id}", str(int(token_id, 16)))
+
     def _get_nft_metadata_from_api(
         self, nft: kas.KlaytnOwnedNft
     ) -> Optional[models.NftMetadata]:
@@ -319,17 +336,30 @@ class KlaytnNFTServiceBase(NFTServiceBase):
                 nft.contract_address,
                 nft.token_id,
             )
-
         try:
             nft_contract = self._get_nft_contract(nft.contract_address)
+            contract_name = nft_contract.name
+            token_type = nft_contract.type
+        except kas.KasApiError as e:
+            log.warning(
+                "klaytn nft contract error. %s. contract_address=%s",
+                e,
+                nft.contract_address,
+                extra={"owner": nft.owner, "contract_address": nft.contract_address},
+            )
+            contract_name = ""
+            token_type = ""
+
+        try:
             if nft.token_uri:
-                token_data = self._get_token_data_by_uri(nft.token_uri)
+                token_uri = self._replace_id_in_token_uri(nft.token_uri, nft.token_id)
             else:
                 nft_result = self.kas_api.get_nft(
                     self.kas_chain, nft.contract_address, nft.token_id
                 )
                 token_uri = nft_result["tokenUri"]
-                token_data = self._get_token_data_by_uri(token_uri)
+                token_uri = self._replace_id_in_token_uri(token_uri, nft.token_id)
+            token_data = self._get_token_data_by_uri(token_uri)
 
         except kas.KasApiError as e:
             log.error(
@@ -350,9 +380,9 @@ class KlaytnNFTServiceBase(NFTServiceBase):
         nft_metadata = models.NftMetadata(
             chain=self.chain.value,
             contract_address=nft.contract_address,
-            contract_name=nft_contract.name,
+            contract_name=contract_name,
             token_id=nft.token_id,
-            token_type=nft_contract.type,
+            token_type=token_type,
             name=token_data["name"],
             image=token_data["image"],
             animation_url=token_data.get("animation_url"),
